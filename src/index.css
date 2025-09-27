@@ -2,95 +2,97 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Indian Traditional Design System - Ocean Hazard Platform */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Indian Traditional Color Palette */
+    --background: 35 25% 97%;              /* Warm off-white with slight peachy tint */
+    --foreground: 20 15% 15%;              /* Deep warm brown */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 35 30% 96%;                    /* Slightly warmer card background */
+    --card-foreground: 20 15% 15%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 35 25% 97%;
+    --popover-foreground: 20 15% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Saffron Primary - Traditional Indian color */
+    --primary: 30 100% 60%;                /* Saffron #FF9933 */
+    --primary-foreground: 0 0% 98%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Marigold Secondary */
+    --secondary: 45 95% 75%;               /* Marigold yellow */
+    --secondary-foreground: 20 15% 15%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Teal Accent */
+    --accent: 180 45% 55%;                 /* Teal accent */
+    --accent-foreground: 0 0% 98%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --muted: 35 20% 92%;                   /* Soft beige */
+    --muted-foreground: 20 10% 45%;
+
+    /* Trust Score Colors */
+    --trust-low: 0 75% 55%;                /* Red for low trust (0-40) */
+    --trust-medium: 45 90% 60%;            /* Yellow for medium trust (41-70) */
+    --trust-high: 120 50% 50%;             /* Green for high trust (71-100) */
+
+    /* Alert Colors */
+    --alert-danger: 0 85% 60%;             /* High alert red */
+    --alert-warning: 35 85% 55%;           /* Warning orange */
+    --alert-info: 210 50% 55%;             /* Info blue */
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 35 15% 88%;                  /* Warm neutral border */
+    --input: 35 15% 88%;
+    --ring: 30 100% 60%;                   /* Saffron focus ring */
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;                     /* Slightly more rounded for Indian aesthetic */
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Custom Design Tokens */
+    --paisley-pattern: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23FF9933' fill-opacity='0.03'%3E%3Cpath d='M20 20c0-5.5-4.5-10-10-10s-10 4.5-10 10 4.5 10 10 10c2.5 0 4.7-.9 6.4-2.4C18.6 25.4 20 22.9 20 20z'/%3E%3C/g%3E%3C/svg%3E");
+    
+    --gradient-saffron: linear-gradient(135deg, hsl(30 100% 60%), hsl(35 95% 65%));
+    --gradient-warm: linear-gradient(180deg, hsl(35 25% 97%), hsl(35 20% 92%));
+    --gradient-trust-low: linear-gradient(90deg, hsl(0 75% 55%), hsl(15 75% 55%));
+    --gradient-trust-medium: linear-gradient(90deg, hsl(45 90% 60%), hsl(50 90% 65%));
+    --gradient-trust-high: linear-gradient(90deg, hsl(120 50% 50%), hsl(140 50% 55%));
+    
+    --shadow-warm: 0 4px 20px hsl(30 100% 60% / 0.1);
+    --shadow-card: 0 2px 12px hsl(20 15% 15% / 0.08);
+    
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 20 15% 8%;               /* Deep warm dark */
+    --foreground: 35 25% 92%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 20 15% 10%;
+    --card-foreground: 35 25% 92%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 20 15% 8%;
+    --popover-foreground: 35 25% 92%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 30 100% 65%;                /* Brighter saffron for dark mode */
+    --primary-foreground: 20 15% 8%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 45 80% 60%;               /* Adjusted marigold for dark */
+    --secondary-foreground: 20 15% 8%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 180 40% 45%;                 /* Darker teal */
+    --accent-foreground: 35 25% 92%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --muted: 20 10% 15%;
+    --muted-foreground: 35 15% 60%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --border: 20 10% 20%;
+    --input: 20 10% 20%;
+    --ring: 30 100% 65%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --shadow-warm: 0 4px 20px hsl(0 0% 0% / 0.4);
+    --shadow-card: 0 2px 12px hsl(0 0% 0% / 0.3);
   }
 }
 
@@ -101,5 +103,128 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    background-image: var(--paisley-pattern);
+    background-attachment: fixed;
+    font-family: 'Hind', sans-serif;
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  /* Trust Score Components */
+  .trust-score-low {
+    @apply bg-gradient-to-r from-red-500 to-red-600 text-white;
+  }
+  
+  .trust-score-medium {
+    @apply bg-gradient-to-r from-yellow-500 to-orange-500 text-white;
+  }
+  
+  .trust-score-high {
+    @apply bg-gradient-to-r from-green-500 to-green-600 text-white;
+  }
+
+  /* Status Badges */
+  .status-queued {
+    @apply bg-yellow-100 text-yellow-800 border border-yellow-300;
+  }
+  
+  .status-synced {
+    @apply bg-green-100 text-green-800 border border-green-300;
+  }
+  
+  .status-verified {
+    @apply bg-blue-100 text-blue-800 border border-blue-300;
+  }
+  
+  .status-rejected {
+    @apply bg-red-100 text-red-800 border border-red-300;
+  }
+
+  /* Offline Indicator */
+  .offline-banner {
+    @apply bg-orange-500 text-white px-4 py-2 text-center text-sm font-medium;
+    animation: pulse 2s infinite;
+  }
+
+  /* Card Animations */
+  .card-hover {
+    @apply transform transition-all duration-300 hover:scale-[1.02] hover:shadow-lg;
+  }
+
+  /* Indian Decorative Elements */
+  .paisley-border {
+    border-image: linear-gradient(45deg, hsl(var(--primary)), hsl(var(--secondary))) 1;
+  }
+
+  .ornate-header {
+    @apply font-heading text-primary relative;
+  }
+
+  .ornate-header::after {
+    content: '';
+    @apply absolute -bottom-2 left-0 w-full h-0.5 bg-gradient-to-r from-primary via-secondary to-primary;
+  }
+}
+
+@layer utilities {
+  /* Custom animations */
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+  }
+
+  .animate-sync {
+    animation: sync-rotate 1s ease-in-out infinite;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-up {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes sync-rotate {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(180deg); }
+  }
+
+  /* Mobile-first utilities */
+  .container-mobile {
+    @apply max-w-md mx-auto px-4;
+  }
+
+  .container-tablet {
+    @apply max-w-2xl mx-auto px-6;
+  }
+
+  /* Trust score utilities */
+  .trust-bar {
+    @apply h-2 rounded-full overflow-hidden bg-gray-200;
+  }
+
+  .trust-fill {
+    @apply h-full transition-all duration-500 ease-out;
   }
 }

@@ -1,0 +1,128 @@
+[
+  {
+    "id": "r1",
+    "userId": "u1",
+    "image": "https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=600&h=400&fit=crop",
+    "coords": {"lat": 13.0827, "lng": 80.2707},
+    "address": "Marina Beach, Chennai, Tamil Nadu, India",
+    "timestamp": "2025-09-26T14:15:00+05:30",
+    "visual_tag": "oil_slick",
+    "description": "Large oil slick spotted near the fishing area. Affecting local marine life.",
+    "trust_score": 62,
+    "agents": {
+      "visual_summary": "oil_slick_like_patch",
+      "weather_check": {"source": "IMD", "status": "no_storm"},
+      "reasoning": "user_report_flagged_for_moderation"
+    },
+    "status": "queued",
+    "likes": 8,
+    "comments": 3,
+    "shares": 2,
+    "alert_level": "medium"
+  },
+  {
+    "id": "r2",
+    "userId": "u2",
+    "image": "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=600&h=400&fit=crop",
+    "coords": {"lat": 17.6868, "lng": 83.2185},
+    "address": "RK Beach, Visakhapatnam, Andhra Pradesh, India",
+    "timestamp": "2025-09-27T09:20:00+05:30",
+    "visual_tag": "marine_debris",
+    "description": "Massive plastic debris accumulation after yesterday's storm. Immediate cleanup needed.",
+    "trust_score": 84,
+    "agents": {
+      "visual_summary": "large_debris_accumulation",
+      "weather_check": {"source": "OpenWeatherMap", "status": "post_storm"},
+      "reasoning": "urgent_alert"
+    },
+    "status": "synced",
+    "likes": 15,
+    "comments": 7,
+    "shares": 5,
+    "alert_level": "high"
+  },
+  {
+    "id": "r3",
+    "userId": "u3",
+    "image": "https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=600&h=400&fit=crop",
+    "coords": {"lat": 9.9312, "lng": 76.2673},
+    "address": "Fort Kochi Beach, Kochi, Kerala, India",
+    "timestamp": "2025-09-27T11:45:00+05:30",
+    "visual_tag": "algae_bloom",
+    "description": "Unusual algae bloom covering large area. Fish mortality observed.",
+    "trust_score": 89,
+    "agents": {
+      "visual_summary": "toxic_algae_bloom",
+      "weather_check": {"source": "IMD", "status": "high_temperature"},
+      "reasoning": "environmental_hazard_confirmed"
+    },
+    "status": "verified",
+    "likes": 23,
+    "comments": 12,
+    "shares": 9,
+    "alert_level": "high"
+  },
+  {
+    "id": "r4",
+    "userId": "u4",
+    "image": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&h=400&fit=crop",
+    "coords": {"lat": 12.9141, "lng": 74.856},
+    "address": "Panambur Beach, Mangalore, Karnataka, India",
+    "timestamp": "2025-09-27T16:30:00+05:30",
+    "visual_tag": "coastal_erosion",
+    "description": "Severe coastal erosion threatening fishing boats. Urgent intervention required.",
+    "trust_score": 76,
+    "agents": {
+      "visual_summary": "severe_erosion_pattern",
+      "weather_check": {"source": "IMD", "status": "monsoon_active"},
+      "reasoning": "infrastructure_threat"
+    },
+    "status": "synced",
+    "likes": 19,
+    "comments": 8,
+    "shares": 6,
+    "alert_level": "medium"
+  },
+  {
+    "id": "r5",
+    "userId": "u5",
+    "image": "https://images.unsplash.com/photo-1571115764595-644a1f56a55c?w=600&h=400&fit=crop",
+    "coords": {"lat": 19.0176, "lng": 72.8562},
+    "address": "Juhu Beach, Mumbai, Maharashtra, India",
+    "timestamp": "2025-09-27T18:10:00+05:30",
+    "visual_tag": "chemical_spill",
+    "description": "Suspected chemical discharge near industrial outfall. Water discoloration visible.",
+    "trust_score": 91,
+    "agents": {
+      "visual_summary": "chemical_contamination",
+      "weather_check": {"source": "IMD", "status": "clear"},
+      "reasoning": "pollution_incident_verified"
+    },
+    "status": "verified",
+    "likes": 45,
+    "comments": 18,
+    "shares": 12,
+    "alert_level": "high"
+  },
+  {
+    "id": "r6",
+    "userId": "u1",
+    "image": "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=600&h=400&fit=crop",
+    "coords": {"lat": 13.0878, "lng": 80.2785},
+    "address": "Besant Nagar Beach, Chennai, Tamil Nadu, India",
+    "timestamp": "2025-09-27T20:25:00+05:30",
+    "visual_tag": "dead_fish",
+    "description": "Mass fish die-off near beach. Possible pollution link.",
+    "trust_score": 58,
+    "agents": {
+      "visual_summary": "fish_mortality_event",
+      "weather_check": {"source": "IMD", "status": "normal"},
+      "reasoning": "needs_expert_verification"
+    },
+    "status": "queued",
+    "likes": 12,
+    "comments": 5,
+    "shares": 3,
+    "alert_level": "medium"
+  }
+]

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "u1",
+    "name": "Asha R.",
+    "handle": "asha_coast",
+    "avatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=faces",
+    "bio": "Fisherfolk·Citizen Scientist·Coastal Watch",
+    "trust_rating": 78,
+    "location": "Chennai, India",
+    "reports_count": 23,
+    "verified": true,
+    "joined": "2024-01-15T00:00:00+05:30"
+  },
+  {
+    "id": "u2",
+    "name": "Ravi K.",
+    "handle": "ravi_reports",
+    "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=faces",
+    "bio": "Volunteer responder·Marine Conservation",
+    "trust_rating": 91,
+    "location": "Visakhapatnam, India",
+    "reports_count": 47,
+    "verified": true,
+    "joined": "2023-11-20T00:00:00+05:30"
+  },
+  {
+    "id": "u3",
+    "name": "Priya M.",
+    "handle": "ocean_guardian",
+    "avatar": "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=150&h=150&fit=crop&crop=faces",
+    "bio": "Marine Biologist·Environmental Activist",
+    "trust_rating": 95,
+    "location": "Kochi, Kerala",
+    "reports_count": 65,
+    "verified": true,
+    "joined": "2023-08-10T00:00:00+05:30"
+  },
+  {
+    "id": "u4",
+    "name": "Arjun S.",
+    "handle": "coastal_watch",
+    "avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=faces",
+    "bio": "Fisherman·Community Leader",
+    "trust_rating": 82,
+    "location": "Mangalore, Karnataka",
+    "reports_count": 31,
+    "verified": false,
+    "joined": "2024-03-05T00:00:00+05:30"
+  },
+  {
+    "id": "u5",
+    "name": "Kavya L.",
+    "handle": "sea_sentinel",
+    "avatar": "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=faces",
+    "bio": "Coast Guard Officer·Safety Advocate",
+    "trust_rating": 98,
+    "location": "Mumbai, Maharashtra",
+    "reports_count": 89,
+    "verified": true,
+    "joined": "2023-05-12T00:00:00+05:30"
+  }
+]
