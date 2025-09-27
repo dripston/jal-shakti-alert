@@ -1,10 +1,10 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useReports } from '../contexts/ReportsContext';
-import { Bell, Menu, Wifi, WifiOff, User } from 'lucide-react';
+import { Bell, Menu, Wifi, WifiOff, User, X } from 'lucide-react';
 import { Button } from './ui/button';
 
-const Header = ({ onMenuToggle, title = "OceanWatch" }) => {
+const Header = ({ onMenuToggle, sidebarOpen = false, title = "OceanWatch" }) => {
   const { user, logout } = useAuth();
   const { isOnline, queuedReports } = useReports();
 
@@ -15,9 +15,13 @@ const Header = ({ onMenuToggle, title = "OceanWatch" }) => {
           variant="ghost"
           size="sm"
           onClick={onMenuToggle}
-          className="mr-2 p-2"
+          className="mr-2 p-2 transition-transform duration-200 hover:scale-105"
         >
-          <Menu className="h-5 w-5" />
+          {sidebarOpen ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <Menu className="h-5 w-5" />
+          )}
         </Button>
 
         <div className="flex-1">

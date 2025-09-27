@@ -63,19 +63,19 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop - only visible when sidebar is open */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40 transition-opacity duration-300"
           onClick={onClose}
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - slides in from left as overlay */}
       <div className={`
-        fixed left-0 top-0 h-full w-80 bg-card border-r z-50 transform transition-transform duration-300
+        fixed left-0 top-0 h-full w-80 bg-card border-r z-50 
+        transform transition-transform duration-300 ease-in-out shadow-xl
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:relative lg:translate-x-0
       `}>
         <div className="flex h-full flex-col">
           {/* Header */}
@@ -93,7 +93,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="lg:hidden p-2"
+              className="p-2 hover:bg-muted transition-colors duration-200"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -145,9 +145,10 @@ const Sidebar = ({ isOpen, onClose }) => {
                         to={item.path}
                         onClick={onClose}
                         className={`
-                          flex items-center space-x-3 rounded-lg px-3 py-2 text-sm transition-colors
+                          flex items-center space-x-3 rounded-lg px-3 py-2 text-sm 
+                          transition-all duration-200 hover:scale-[1.02]
                           ${active 
-                            ? 'bg-primary text-primary-foreground' 
+                            ? 'bg-primary text-primary-foreground shadow-sm' 
                             : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                           }
                         `}
@@ -168,7 +169,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               <NavLink
                 to="/settings"
                 onClick={onClose}
-                className="flex items-center space-x-3 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                className="flex items-center space-x-3 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors duration-200"
               >
                 <Settings className="h-4 w-4" />
                 <span>Settings</span>
@@ -180,7 +181,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                   logout();
                   onClose();
                 }}
-                className="w-full justify-start px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="w-full justify-start px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors duration-200"
               >
                 <LogOut className="h-4 w-4 mr-3" />
                 <span>Logout</span>

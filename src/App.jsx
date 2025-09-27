@@ -59,6 +59,7 @@ const AppLayout = () => {
       <div className="flex-1 flex flex-col min-w-0">
         <Header 
           onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
+          sidebarOpen={sidebarOpen}
         />
         
         <main className="flex-1 overflow-auto">
