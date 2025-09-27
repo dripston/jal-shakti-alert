@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import React, { createContext, useContext, useState, useEffect } from 'react';
 import localforage from 'localforage';
 import { useAuth } from './AuthContext';
 import reportsData from '../mock/reports.json';
