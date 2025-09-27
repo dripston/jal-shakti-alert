@@ -22,6 +22,7 @@ import UsersAnalytics from './pages/analytics/UsersAnalytics';
 import VolunteersAnalytics from './pages/analytics/VolunteersAnalytics';
 import SummaryDashboard from './pages/dashboards/SummaryDashboard';
 import SettingsPage from './pages/SettingsPage';
+import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient();
 
@@ -73,6 +74,7 @@ const AppLayout = () => {
             <Route path="/analytics/volunteers" element={<VolunteersAnalytics />} />
             <Route path="/dashboard/summary" element={<SummaryDashboard />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
       </div>
