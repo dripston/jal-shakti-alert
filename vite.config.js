@@ -11,12 +11,7 @@ export default defineConfig({
     hmr: {
       clientPort: 5000
     },
-    allowedHosts: [
-      'd86a3f66ab56.ngrok-free.app',
-      '61429d11697a.ngrok-free.app',
-      '.ngrok-free.app', // Allow any ngrok subdomain
-      'localhost'
-    ]
+    allowedHosts: true // Allow all hosts for Replit proxy environment
   },
   resolve: {
     alias: {
