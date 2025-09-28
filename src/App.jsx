@@ -7,6 +7,7 @@ import { TooltipProvider } from './components/ui/tooltip';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ReportsProvider } from './contexts/ReportsContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -23,6 +24,7 @@ import VolunteersAnalytics from './pages/analytics/VolunteersAnalytics';
 import SummaryDashboard from './pages/dashboards/SummaryDashboard';
 import SettingsPage from './pages/SettingsPage';
 import NotFound from './pages/NotFound';
+import Notification from './components/Notification';
 
 const queryClient = new QueryClient();
 
@@ -64,9 +66,9 @@ const AppLayout = () => {
 
   return (
     <div className={`flex min-h-screen bg-background ${sidebarOpen ? 'lg:overflow-hidden' : ''}`}>
-      <Sidebar 
-        isOpen={sidebarOpen} 
-        onClose={() => setSidebarOpen(false)} 
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
       
       <div className="flex-1 flex flex-col min-w-0">
@@ -91,6 +93,7 @@ const AppLayout = () => {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
+        <Notification />
       </div>
     </div>
   );
@@ -116,9 +119,11 @@ const AuthenticatedApp = () => {
   }
   
   return (
-    <ReportsProvider>
-      <AppLayout />
-    </ReportsProvider>
+    <NotificationProvider>
+      <ReportsProvider>
+        <AppLayout />
+      </ReportsProvider>
+    </NotificationProvider>
   );
 };
 

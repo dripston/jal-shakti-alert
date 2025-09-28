@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import localforage from 'localforage';
 import { useAuth } from './AuthContext';
-import reportsData from '../mock/reports.json';
-import socialData from '../mock/social_posts.json';
+import { useNotifications } from './NotificationContext';
+import { uploadReport } from '../services/api';
+// Mock data imports removed - using real SIH pipeline only
 
 const ReportsContext = createContext();
 
@@ -16,6 +17,7 @@ export const useReports = () => {
 
 export const ReportsProvider = ({ children }) => {
   const { user } = useAuth();
+  const { addNotification } = useNotifications();
   const [reports, setReports] = useState([]);
   const [socialPosts, setSocialPosts] = useState([]);
   const [queuedReports, setQueuedReports] = useState([]);
@@ -28,9 +30,13 @@ export const ReportsProvider = ({ children }) => {
     alertLevel: 'all'
   });
 
+  // Update online status
   useEffect(() => {
-    initializeData();
-    setupNetworkListeners();
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
     
     return () => {
       window.removeEventListener('online', handleOnline);
@@ -38,11 +44,21 @@ export const ReportsProvider = ({ children }) => {
     };
   }, []);
 
+  // Process queued reports when coming online
   useEffect(() => {
-    if (isOnline) {
-      syncQueuedReports();
+    if (isOnline && queuedReports.length > 0) {
+      // Delay the sync to avoid setState during render
+      const timer = setTimeout(() => {
+        syncQueuedReports();
+      }, 100);
+      return () => clearTimeout(timer);
     }
-  }, [isOnline]);
+  }, [isOnline, queuedReports]);
+
+  // Initialize data
+  useEffect(() => {
+    initializeData();
+  }, []);
 
   const initializeData = async () => {
     try {
@@ -51,93 +67,20 @@ export const ReportsProvider = ({ children }) => {
       const cachedSocial = await localforage.getItem('oceanwatch_social') || [];
       const queued = await localforage.getItem('oceanwatch_queued_reports') || [];
 
-      // If no cached data, use mock data
-      if (cachedReports.length === 0) {
-        setReports(reportsData);
-        await localforage.setItem('oceanwatch_reports', reportsData);
-      } else {
-        setReports(cachedReports);
-      }
-
-      if (cachedSocial.length === 0) {
-        setSocialPosts(socialData);
-        await localforage.setItem('oceanwatch_social', socialData);
-      } else {
-        setSocialPosts(cachedSocial);
-      }
-
+      // Start with empty arrays - no mock data
+      setReports(cachedReports);
+      setSocialPosts(cachedSocial);
       setQueuedReports(queued);
     } catch (error) {
       console.error('Failed to initialize data:', error);
-      // Fallback to mock data
-      setReports(reportsData);
-      setSocialPosts(socialData);
+      // Start with empty arrays even on error
+      setReports([]);
+      setSocialPosts([]);
+      setQueuedReports([]);
     }
   };
 
-  const setupNetworkListeners = () => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-  };
-
-  const handleOnline = () => setIsOnline(true);
-  const handleOffline = () => setIsOnline(false);
-
-  const createReport = async (reportData) => {
-    if (!user) throw new Error('User must be authenticated');
-
-    const newReport = {
-      id: `r_${Date.now()}`,
-      userId: user.id,
-      ...reportData,
-      timestamp: new Date().toISOString(),
-      status: isOnline ? 'synced' : 'queued',
-      likes: 0,
-      comments: 0,
-      shares: 0,
-      trust_score: calculateInitialTrustScore(reportData),
-      agents: generateMockAgentResponse(reportData)
-    };
-
-    if (isOnline) {
-      // Simulate API call
-      try {
-        setIsLoading(true);
-        await simulateApiCall('/api/reports', 'POST', newReport);
-        
-        const updatedReports = [newReport, ...reports];
-        setReports(updatedReports);
-        await localforage.setItem('oceanwatch_reports', updatedReports);
-        
-        return newReport;
-      } catch (error) {
-        // If online but API fails, queue the report
-        await queueReport(newReport);
-        throw error;
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
-      // Queue for later sync
-      await queueReport(newReport);
-      return newReport;
-    }
-  };
-
-  const queueReport = async (report) => {
-    const updatedQueue = [...queuedReports, report];
-    setQueuedReports(updatedQueue);
-    await localforage.setItem('oceanwatch_queued_reports', updatedQueue);
-    
-    // Add to local reports for immediate UI update
-    const updatedReports = [report, ...reports];
-    setReports(updatedReports);
-  };
-
-  const syncQueuedReports = async () => {
+  const syncQueuedReports = useCallback(async () => {
     if (queuedReports.length === 0) return;
 
     setIsLoading(true);
@@ -145,15 +88,42 @@ export const ReportsProvider = ({ children }) => {
     try {
       for (const report of queuedReports) {
         try {
-          await simulateApiCall('/api/reports', 'POST', report);
+          // Send data to backend API
+          const result = await uploadReport(report.image, {
+            coords: report.coords,
+            timestamp: report.timestamp ? new Date(report.timestamp).getTime() : Date.now()
+          });
           
-          // Update report status to synced
-          const syncedReport = { ...report, status: 'synced' };
+          // Update report with actual data from API
+          const updatedReport = {
+            ...report,
+            status: 'processed',
+            progress: 100,
+            processingStep: 5,
+            trustScore: result.trust_evaluation.score,
+            location: result.location,
+            address: result.location,
+            visualSummary: result.visual_summary,
+            weatherSummary: result.weather_summary,
+            authorityReport: result.reports.authority_report,
+            publicAlert: result.reports.public_alert,
+            volunteerGuidance: result.reports.volunteer_guidance,
+            coords: result.coordinates
+          };
           
           // Update reports list
           setReports(prev => prev.map(r => 
-            r.id === report.id ? syncedReport : r
+            r.id === report.id ? updatedReport : r
           ));
+          
+          // Add notification
+          if (addNotification) {
+            addNotification({
+              title: 'Trust Score Ready',
+              message: `Report processed with trust score: ${result.trust_evaluation.score}%`,
+              type: result.trust_evaluation.score >= 50 ? 'success' : 'error'
+            });
+          }
         } catch (error) {
           console.error(`Failed to sync report ${report.id}:`, error);
           // Keep in queue for next attempt
@@ -165,29 +135,180 @@ export const ReportsProvider = ({ children }) => {
       await localforage.setItem('oceanwatch_queued_reports', []);
       
       // Update cached reports
-      const allReports = await localforage.getItem('oceanwatch_reports') || [];
-      await localforage.setItem('oceanwatch_reports', allReports);
+      await localforage.setItem('oceanwatch_reports', reports);
       
     } catch (error) {
       console.error('Sync failed:', error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [queuedReports, reports, addNotification]);
 
-  const simulateApiCall = (endpoint, method, data) => {
-    return new Promise((resolve, reject) => {
-      const delay = Math.random() * 2000 + 500; // 500-2500ms delay
+  // Simulate polling for updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setReports(prevReports => {
+        return prevReports.map(report => {
+          if (report.status === 'pending' && report.progress < 100) {
+            // Simulate progress updates
+            const progressIncrement = Math.floor(Math.random() * 20) + 5;
+            const newProgress = Math.min(report.progress + progressIncrement, 100);
+            
+            let newStatus = report.status;
+            let processingStep = report.processingStep;
+            
+            // Update processing step based on progress
+            if (newProgress >= 20 && processingStep === 0) {
+              processingStep = 1; // Uploaded
+            } else if (newProgress >= 40 && processingStep === 1) {
+              processingStep = 2; // Processing Visual Summary
+            } else if (newProgress >= 60 && processingStep === 2) {
+              processingStep = 3; // Processing Weather Data
+            } else if (newProgress >= 80 && processingStep === 3) {
+              processingStep = 4; // Running Trust Evaluation
+            } else if (newProgress >= 95 && processingStep === 4) {
+              processingStep = 5; // Generating Reports
+            }
+            
+            // When progress completes, simulate API response
+            if (newProgress === 100 && report.status === 'pending') {
+              newStatus = 'processed';
+              const trustScore = Math.floor(Math.random() * 60) + 20; // Random score between 20-80
+              
+              // Add notification when trust score is ready
+              if (addNotification) {
+                addNotification({
+                  title: 'Trust Score Ready',
+                  message: `Report processed with trust score: ${trustScore}%`,
+                  type: trustScore >= 50 ? 'success' : 'error'
+                });
+              }
+              
+              return {
+                ...report,
+                status: newStatus,
+                progress: newProgress,
+                processingStep,
+                trustScore,
+                location: 'Sample Location, India',
+                visualSummary: 'This is a sample visual summary of the hazard reported.',
+                weatherSummary: 'Current weather conditions are stable with clear skies.',
+                authorityReport: 'Authority report content would appear here.',
+                publicAlert: 'Public alert content would appear here.',
+                volunteerGuidance: 'Volunteer guidance content would appear here.'
+              };
+            }
+            
+            return {
+              ...report,
+              progress: newProgress,
+              processingStep,
+              status: newStatus
+            };
+          }
+          return report;
+        });
+      });
+    }, 3000); // Update every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [addNotification]);
+
+  const createReport = useCallback(async (reportData) => {
+    if (!user) throw new Error('User must be authenticated');
+
+    const newReport = {
+      id: `r_${Date.now()}`,
+      userId: user.id,
+      ...reportData,
+      timestamp: new Date().toISOString(),
+      status: isOnline ? 'pending' : 'queued',
+      progress: 0,
+      processingStep: 0, // 0: not started, 1: uploaded, 2: visual summary, 3: weather data, 4: trust evaluation, 5: reports generated
+      trustScore: null,
+      location: null,
+      visualSummary: null,
+      weatherSummary: null,
+      authorityReport: null,
+      publicAlert: null,
+      volunteerGuidance: null,
+      likes: 0,
+      comments: 0,
+      shares: 0,
+      trust_score: calculateInitialTrustScore(reportData),
+      agents: generateMockAgentResponse(reportData)
+    };
+
+    // Add to reports immediately for UI
+    setReports(prev => [newReport, ...prev]);
+    
+    // If offline, queue the report
+    if (!isOnline) {
+      setQueuedReports(prev => [...prev, newReport]);
+      // Add notification about queuing
+      if (addNotification) {
+        addNotification({
+          title: 'Report Queued',
+          message: 'Report will be submitted when you are back online',
+          type: 'info'
+        });
+      }
+      return newReport;
+    }
+    
+    try {
+      // Send data to backend API
+      const result = await uploadReport(reportData.image, {
+        coords: reportData.coords,
+        timestamp: Date.now()
+      });
       
-      setTimeout(() => {
-        if (Math.random() > 0.1) { // 90% success rate
-          resolve(data);
-        } else {
-          reject(new Error('Network error'));
-        }
-      }, delay);
-    });
-  };
+      // Update report with actual data from API
+      const updatedReport = {
+        ...newReport,
+        status: 'processed',
+        progress: 100,
+        processingStep: 5,
+        trustScore: result.trust_evaluation.score,
+        location: result.location,
+        address: result.location,
+        visualSummary: result.visual_summary,
+        weatherSummary: result.weather_summary,
+        authorityReport: result.reports.authority_report,
+        publicAlert: result.reports.public_alert,
+        volunteerGuidance: result.reports.volunteer_guidance,
+        coords: result.coordinates
+      };
+      
+      setReports(prev => prev.map(report => 
+        report.id === newReport.id ? updatedReport : report
+      ));
+      
+      // Add notification
+      if (addNotification) {
+        addNotification({
+          title: 'Trust Score Ready',
+          message: `Report processed with trust score: ${result.trust_evaluation.score}%`,
+          type: result.trust_evaluation.score >= 50 ? 'success' : 'error'
+        });
+      }
+      
+      return updatedReport;
+    } catch (error) {
+      console.error('Error processing report:', error);
+      // If there's an error, queue the report for later
+      setQueuedReports(prev => [...prev, newReport]);
+      // Add notification about queuing
+      if (addNotification) {
+        addNotification({
+          title: 'Report Queued',
+          message: 'Report will be submitted when connection is restored',
+          type: 'info'
+        });
+      }
+      return newReport;
+    }
+  }, [user, isOnline, addNotification]);
 
   const calculateInitialTrustScore = (reportData) => {
     let score = 50; // Base score

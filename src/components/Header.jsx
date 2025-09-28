@@ -38,7 +38,7 @@ const Header = ({ onMenuToggle, sidebarOpen = false, title = "OceanWatch" }) => 
             ) : (
               <div className="flex items-center space-x-1">
                 <WifiOff className="h-4 w-4 text-red-500" />
-                {queuedReports.length > 0 && (
+                {queuedReports && queuedReports.length > 0 && (
                   <span className="rounded-full bg-yellow-500 px-1.5 py-0.5 text-xs text-white">
                     {queuedReports.length}
                   </span>
@@ -69,7 +69,7 @@ const Header = ({ onMenuToggle, sidebarOpen = false, title = "OceanWatch" }) => 
       {/* Offline Banner */}
       {!isOnline && (
         <div className="offline-banner">
-          Offline Mode - {queuedReports.length} reports pending sync
+          Offline Mode - {(queuedReports && queuedReports.length) || 0} reports pending sync
         </div>
       )}
     </header>

@@ -4,6 +4,22 @@
 
 **URL**: https://lovable.dev/projects/dae516d5-6a56-4ed2-93bb-cd4dcf5a2bde
 
+## Ocean Hazard Reporting Implementation
+
+This project has been enhanced with a new ocean hazard reporting system. See [README_IMPLEMENTATION.md](README_IMPLEMENTATION.md) for details on the new features and implementation.
+
+## Environment Variables
+
+Before running the application, you need to set up environment variables:
+
+1. Copy the example files:
+   ```bash
+   cp backend/.env.example backend/.env
+   cp .env.example .env
+   ```
+
+2. Update the values in both `.env` files according to your setup.
+
 ## How can I edit this code?
 
 There are several ways of editing your application.
