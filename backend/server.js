@@ -8,6 +8,7 @@ require('dotenv').config();
 const { router: authRoutes } = require('./routes/auth');
 const reportsRoutes = require('./routes/reports');
 const usersRoutes = require('./routes/users');
+const { initializeDatabase } = require('./config/database');
 
 const app = express();
 const PORT = process.env.PORT || (process.env.NODE_ENV === 'production' ? 5000 : 3001);
@@ -27,7 +28,7 @@ app.use(limiter);
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? false  // Same-origin requests only in production
-    : ['http://localhost:5000', 'http://0.0.0.0:5000'],
+    : ['http://localhost:3000', 'http://localhost:5000', 'http://0.0.0.0:5000', 'http://127.0.0.1:5000'],
   credentials: true
 }));
 
@@ -76,10 +77,18 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🌊 OceanWatch API server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🗄️  Database: ${process.env.DB_PATH || './database/oceanwatch.db'}`);
+  
+  // Initialize database on startup
+  try {
+    await initializeDatabase();
+    console.log('✅ Database ready');
+  } catch (error) {
+    console.error('❌ Database initialization failed:', error);
+  }
 });
 
 module.exports = app;

@@ -1,8 +1,8 @@
 // API service for communicating with the backend
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
+const API_BASE_URL = import.meta.env.PROD 
   ? '/api'  // Relative path for same-origin in production
-  : 'http://localhost:3001/api';
+  : import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 export const uploadReport = async (imageData, gps) => {
   try {
@@ -23,6 +23,15 @@ export const uploadReport = async (imageData, gps) => {
     
     formData.append('image', imageFile);
     formData.append('gps', JSON.stringify(gps));
+    
+    // Add additional fields that backend expects
+    if (gps.coords) {
+      formData.append('latitude', gps.coords.latitude);
+      formData.append('longitude', gps.coords.longitude);
+      if (gps.coords.accuracy) {
+        formData.append('accuracy', gps.coords.accuracy);
+      }
+    }
 
     const response = await fetch(`${API_BASE_URL}/reports/process`, {
       method: 'POST',
