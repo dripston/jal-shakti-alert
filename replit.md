@@ -1,105 +1,92 @@
-# OceanWatch - Ocean Hazard Reporting System
+# OceanWatch - Ocean Hazard Monitoring System
 
 ## Overview
-OceanWatch is a crowd-sourced ocean hazard monitoring system built with React frontend and Express.js backend. It allows users to report ocean hazards through image uploads and GPS coordinates, which are processed through an AI pipeline for trust evaluation and automated report generation.
+OceanWatch is a crowd-sourced ocean hazard monitoring and reporting system that allows users to report maritime emergencies, pollution incidents, and other ocean-related hazards. The system uses AI-powered analysis through the SIH (Smart India Hackathon) pipeline to process images and generate trust scores, weather analysis, and response reports.
 
 ## Project Architecture
 
 ### Frontend (React + Vite)
-- **Port**: 5000
-- **Framework**: React 18 with Vite build system
+- **Port**: 5000 (configured for Replit proxy)
+- **Framework**: React 18.3.1 with Vite 5.4.19
 - **UI Library**: Radix UI components with Tailwind CSS
-- **State Management**: React Context (AuthContext, ReportsContext, NotificationContext)
-- **Key Features**:
-  - Image upload with camera integration
-  - GPS coordinate capture
-  - Real-time processing status tracking
+- **State Management**: React Context API
+- **Features**: 
+  - User authentication and registration
+  - Real-time report submission with camera/file upload
   - Interactive map visualization with Leaflet
-  - Trust scoring system
-  - Offline queue support with localforage
+  - Progressive Web App (PWA) capabilities
+  - Offline queueing for reports
 
-### Backend (Express.js)
-- **Port**: 3001
-- **Database**: SQLite with initialization scripts
-- **Key Features**:
-  - Multipart form data handling for image uploads
-  - SIH Pipeline integration for AI processing
-  - CORS configuration for frontend communication
-  - Rate limiting and security middleware
-  - User authentication and management
+### Backend (Node.js + Express)
+- **Port**: 3001 (localhost)
+- **Database**: SQLite with pre-configured tables
+- **API Integration**: Proxies requests to SIH Pipeline (https://pipeline-1-sih.onrender.com)
+- **Security**: Helmet, CORS, rate limiting, input validation
+- **File Handling**: Multer for multipart form uploads
 
-### External Integration
-- **SIH Pipeline**: `https://pipeline-1-sih.onrender.com/process`
-  - Expects multipart form data with `image` file and `gps` JSON string
-  - Returns processed results with trust scores and automated reports
+### Database Schema
+- **Users**: Authentication, profiles, trust ratings
+- **Reports**: Ocean hazard reports with processing status
+- **Admin**: System administration and moderation
 
-## Recent Changes (Project Import Setup)
+## Key Features Fixed in Replit Environment
 
-### Dependencies Installed
-- Frontend: All React dependencies via npm
-- Backend: Added node-fetch@2 and form-data for pipeline integration
+### 1. SIH Pipeline Integration
+- **Fixed multipart form data handling** in backend
+- **Removed direct frontend calls** to external API
+- **Proper proxy through backend** with error handling
+- **Real GPS coordinates and image processing**
 
-### Configuration Updates
-1. **Vite Config**: Updated to allow all hosts for Replit proxy (`allowedHosts: true`)
-2. **Backend CORS**: Configured to accept requests from frontend on port 5000
-3. **Pipeline Integration**: Fixed to use proper multipart form data format
-4. **Data Storage**: Cleared cached mock data, starts with clean slate
+### 2. Mock Data Removal
+- **Cleared localStorage cache** that showed fake reports
+- **Removed hardcoded sample data** from initialization
+- **Clean app startup** with no pre-loaded content
 
-### Database Setup
-- Initialized SQLite database with admin user
-- Default credentials: admin/admin123 (change in production)
-- Test user: testuser/test123
+### 3. Replit Compatibility
+- **Frontend configured** with `allowedHosts: true` for proxy environment
+- **CORS properly set** for localhost:5000 frontend
+- **Host binding**: Frontend on 0.0.0.0:5000, Backend on localhost:3001
 
-### Deployment Configuration
-- **Target**: Autoscale (stateless web app)
-- **Build**: `npm run build`
-- **Run**: Backend and frontend served together
+## Development Setup
 
-## Project Structure
-```
-├── backend/               # Express.js backend
-│   ├── routes/           # API routes (auth, reports, users)
-│   ├── config/          # Database configuration
-│   ├── scripts/         # Database initialization
-│   └── server.js        # Main server file
-├── src/                 # React frontend
-│   ├── components/      # Reusable UI components
-│   ├── pages/          # Application pages
-│   ├── contexts/       # React context providers
-│   ├── services/       # API service layer
-│   └── hooks/          # Custom React hooks
-├── public/             # Static assets
-└── package.json        # Frontend dependencies
-```
+### Credentials
+- **Admin User**: admin / admin123 ⚠️ Change in production
+- **Test User**: testuser / test123
+- **Demo Login**: demo@oceanwatch.in / demo123
+
+### Running the Application
+1. **Frontend**: Automatically starts on port 5000
+2. **Backend**: Automatically starts on port 3001
+3. **Database**: SQLite initialized with tables and users
+
+### API Endpoints
+- `GET /api/health` - System health check
+- `POST /api/reports/process` - Submit report for SIH pipeline analysis
+- `POST /api/auth/login` - User authentication
+- `POST /api/auth/register` - User registration
+
+## Deployment Configuration
+- **Type**: Autoscale (stateless web application)
+- **Build**: `npm run build` (Vite production build)
+- **Run**: Parallel backend + frontend preview servers
+
+## Recent Changes (September 28, 2025)
+- ✅ Fixed SIH pipeline integration with proper multipart form data
+- ✅ Implemented backend proxy for external API calls
+- ✅ Removed mock data showing on app initialization
+- ✅ Configured Replit environment compatibility
+- ✅ Set up proper workflows for development
+- ✅ Initialized SQLite database with admin/test users
+- ✅ Configured deployment settings for production
 
 ## User Preferences
-- Clean, modern UI with ocean-themed design
-- Real-time processing feedback with progress indicators
-- Offline-first approach with queue synchronization
-- No mock data - only real pipeline results
-- Trust scoring system for report validation
+- **Clean initialization**: No mock data on startup
+- **Real API integration**: All calls go through backend proxy
+- **Proper error handling**: Network issues gracefully handled
+- **Replit optimized**: Host settings configured for proxy environment
 
-## Development Workflow
-1. Frontend runs on port 5000 (user-facing)
-2. Backend runs on port 3001 (API server)
-3. Reports uploaded via frontend → backend → SIH pipeline → results displayed
-4. All hosts allowed for Replit proxy environment
-5. SQLite database for user management and local data
-
-## Key Features Working
-✅ Image upload with multipart form data  
-✅ GPS coordinate capture and transmission  
-✅ SIH Pipeline integration with proper data format  
-✅ Real-time processing status updates  
-✅ Trust score evaluation and display  
-✅ Clean UI without mock data interference  
-✅ User authentication system  
-✅ Offline queue support  
-✅ Interactive map visualization  
-
-## Next Steps for Production
-1. Update production domain in CORS configuration
-2. Change default admin password
-3. Configure environment variables for sensitive data
-4. Set up proper logging and monitoring
-5. Add backup strategy for SQLite database
+## Next Steps
+- Change default admin password in production
+- Add environment variables for API URLs
+- Implement proper user management and permissions
+- Add monitoring and logging for production deployment

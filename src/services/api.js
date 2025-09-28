@@ -1,7 +1,7 @@
 // API service for communicating with the backend
 
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://your-domain.com/api' 
+  ? '/api'  // Relative path for same-origin in production
   : 'http://localhost:3001/api';
 
 export const uploadReport = async (imageData, gps) => {
@@ -50,32 +50,23 @@ export const uploadReport = async (imageData, gps) => {
 };
 
 export const getReports = async () => {
-  // In a real implementation, this would fetch reports from the backend
-  // For now, we'll return mock data
-  return [
-    {
-      id: '1',
-      image: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=600&h=400&fit=crop',
-      location: 'Marina Beach, Chennai, Tamil Nadu, India',
-      timestamp: '2025-09-26T14:15:00+05:30',
-      trustScore: 62,
-      status: 'processed',
-      authorityReport: 'Authority report content would appear here.',
-      publicAlert: 'Public alert content would appear here.',
-      volunteerGuidance: 'Volunteer guidance content would appear here.'
-    },
-    {
-      id: '2',
-      image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=600&h=400&fit=crop',
-      location: 'RK Beach, Visakhapatnam, Andhra Pradesh, India',
-      timestamp: '2025-09-27T09:20:00+05:30',
-      trustScore: 84,
-      status: 'processed',
-      authorityReport: 'Authority report content would appear here.',
-      publicAlert: 'Public alert content would appear here.',
-      volunteerGuidance: 'Volunteer guidance content would appear here.'
+  // Fetch reports from backend API
+  try {
+    const response = await fetch(`${API_BASE_URL}/reports`, {
+      headers: {
+        'Accept': 'application/json',
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  ];
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching reports:', error);
+    return []; // Return empty array instead of mock data
+  }
 };
 
 export default {

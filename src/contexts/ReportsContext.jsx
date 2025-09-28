@@ -62,16 +62,18 @@ export const ReportsProvider = ({ children }) => {
 
   const initializeData = async () => {
     try {
-      // Clear any existing cached data to start fresh (remove mock data)
-      await localforage.clear();
+      // Load cached data from previous sessions  
+      const cachedReports = await localforage.getItem('oceanwatch_reports') || [];
+      const cachedSocial = await localforage.getItem('oceanwatch_social') || [];
+      const queued = await localforage.getItem('oceanwatch_queued_reports') || [];
       
-      // Start with completely empty arrays - no cached or mock data
-      setReports([]);
-      setSocialPosts([]);
-      setQueuedReports([]);
+      // Restore reports and queued items for offline functionality
+      setReports(cachedReports);
+      setSocialPosts(cachedSocial);
+      setQueuedReports(queued);
     } catch (error) {
       console.error('Failed to initialize data:', error);
-      // Start with empty arrays even on error
+      // Start with empty arrays on error
       setReports([]);
       setSocialPosts([]);
       setQueuedReports([]);
@@ -142,75 +144,8 @@ export const ReportsProvider = ({ children }) => {
     }
   }, [queuedReports, reports, addNotification]);
 
-  // Simulate polling for updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setReports(prevReports => {
-        return prevReports.map(report => {
-          if (report.status === 'pending' && report.progress < 100) {
-            // Simulate progress updates
-            const progressIncrement = Math.floor(Math.random() * 20) + 5;
-            const newProgress = Math.min(report.progress + progressIncrement, 100);
-            
-            let newStatus = report.status;
-            let processingStep = report.processingStep;
-            
-            // Update processing step based on progress
-            if (newProgress >= 20 && processingStep === 0) {
-              processingStep = 1; // Uploaded
-            } else if (newProgress >= 40 && processingStep === 1) {
-              processingStep = 2; // Processing Visual Summary
-            } else if (newProgress >= 60 && processingStep === 2) {
-              processingStep = 3; // Processing Weather Data
-            } else if (newProgress >= 80 && processingStep === 3) {
-              processingStep = 4; // Running Trust Evaluation
-            } else if (newProgress >= 95 && processingStep === 4) {
-              processingStep = 5; // Generating Reports
-            }
-            
-            // When progress completes, simulate API response
-            if (newProgress === 100 && report.status === 'pending') {
-              newStatus = 'processed';
-              const trustScore = Math.floor(Math.random() * 60) + 20; // Random score between 20-80
-              
-              // Add notification when trust score is ready
-              if (addNotification) {
-                addNotification({
-                  title: 'Trust Score Ready',
-                  message: `Report processed with trust score: ${trustScore}%`,
-                  type: trustScore >= 50 ? 'success' : 'error'
-                });
-              }
-              
-              return {
-                ...report,
-                status: newStatus,
-                progress: newProgress,
-                processingStep,
-                trustScore,
-                location: 'Sample Location, India',
-                visualSummary: 'This is a sample visual summary of the hazard reported.',
-                weatherSummary: 'Current weather conditions are stable with clear skies.',
-                authorityReport: 'Authority report content would appear here.',
-                publicAlert: 'Public alert content would appear here.',
-                volunteerGuidance: 'Volunteer guidance content would appear here.'
-              };
-            }
-            
-            return {
-              ...report,
-              progress: newProgress,
-              processingStep,
-              status: newStatus
-            };
-          }
-          return report;
-        });
-      });
-    }, 3000); // Update every 3 seconds
-
-    return () => clearInterval(interval);
-  }, [addNotification]);
+  // Real-time progress updates only for legitimate API processing
+  // Progress simulation removed - only real API responses update status
 
   const createReport = useCallback(async (reportData) => {
     if (!user) throw new Error('User must be authenticated');

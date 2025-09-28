@@ -105,6 +105,21 @@ router.post('/process', upload.single('image'), async (req, res) => {
   }
 });
 
+// Get all reports
+router.get('/', async (req, res) => {
+  try {
+    // In a real implementation, this would fetch from database
+    // For now, return empty array since we start fresh
+    res.json([]);
+  } catch (error) {
+    console.error('Error fetching reports:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch reports',
+      message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+});
+
 // Health check for reports service
 router.get('/health', (req, res) => {
   res.json({ 

@@ -10,7 +10,7 @@ const reportsRoutes = require('./routes/reports');
 const usersRoutes = require('./routes/users');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || (process.env.NODE_ENV === 'production' ? 5000 : 3001);
 
 // Security middleware
 app.use(helmet());
@@ -26,7 +26,7 @@ app.use(limiter);
 // CORS configuration
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-domain.com'] 
+    ? false  // Same-origin requests only in production
     : ['http://localhost:5000', 'http://0.0.0.0:5000'],
   credentials: true
 }));
@@ -38,7 +38,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Static file serving for uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// API routes
+// API routes MUST come before catch-all React routing
 app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/users', usersRoutes);
@@ -51,6 +51,16 @@ app.get('/api/health', (req, res) => {
     version: '1.0.0'
   });
 });
+
+// Serve built frontend in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../dist')));
+  
+  // Handle React routing, return all requests to React app
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../dist', 'index.html'));
+  });
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {
