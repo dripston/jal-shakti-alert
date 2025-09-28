@@ -62,15 +62,13 @@ export const ReportsProvider = ({ children }) => {
 
   const initializeData = async () => {
     try {
-      // Load cached data
-      const cachedReports = await localforage.getItem('oceanwatch_reports') || [];
-      const cachedSocial = await localforage.getItem('oceanwatch_social') || [];
-      const queued = await localforage.getItem('oceanwatch_queued_reports') || [];
-
-      // Start with empty arrays - no mock data
-      setReports(cachedReports);
-      setSocialPosts(cachedSocial);
-      setQueuedReports(queued);
+      // Clear any existing cached data to start fresh (remove mock data)
+      await localforage.clear();
+      
+      // Start with completely empty arrays - no cached or mock data
+      setReports([]);
+      setSocialPosts([]);
+      setQueuedReports([]);
     } catch (error) {
       console.error('Failed to initialize data:', error);
       // Start with empty arrays even on error

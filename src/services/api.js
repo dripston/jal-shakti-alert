@@ -1,6 +1,8 @@
 // API service for communicating with the backend
 
-const API_BASE_URL = 'https://pipeline-1-sih.onrender.com';
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://your-domain.com/api' 
+  : 'http://localhost:3001/api';
 
 export const uploadReport = async (imageData, gps) => {
   try {
@@ -22,7 +24,7 @@ export const uploadReport = async (imageData, gps) => {
     formData.append('image', imageFile);
     formData.append('gps', JSON.stringify(gps));
 
-    const response = await fetch(`${API_BASE_URL}/process`, {
+    const response = await fetch(`${API_BASE_URL}/reports/process`, {
       method: 'POST',
       body: formData,
       // Add headers to handle CORS
