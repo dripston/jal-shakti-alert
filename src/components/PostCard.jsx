@@ -96,13 +96,13 @@ const PostCard = ({ report, onViewOnMap, compact = false }) => {
             className="absolute left-2 top-2 bg-black/50 text-white capitalize"
             variant="secondary"
           >
-            {report.visual_tag.replace('_', ' ')}
+            {report.visual_tag?.replace('_', ' ')}
           </Badge>
 
           {/* Trust Score */}
           <div className="absolute right-2 top-2 flex items-center space-x-1">
-            <div className={`rounded-full px-2 py-1 text-xs font-medium ${getTrustScoreColor(report.trust_score)}`}>
-              {report.trust_score}%
+            <div className={`rounded-full px-2 py-1 text-xs font-medium ${getTrustScoreColor(report.trust_score || 0)}`}>
+              {report.trust_score || 0}%
             </div>
           </div>
         </div>
@@ -111,8 +111,8 @@ const PostCard = ({ report, onViewOnMap, compact = false }) => {
         <div className="mb-3">
           <div className="trust-bar">
             <div 
-              className={`trust-fill ${getTrustScoreColor(report.trust_score)}`}
-              style={{ width: `${report.trust_score}%` }}
+              className={`trust-fill ${getTrustScoreColor(report.trust_score || 0)}`}
+              style={{ width: `${report.trust_score || 0}%` }}
             />
           </div>
         </div>
@@ -127,7 +127,7 @@ const PostCard = ({ report, onViewOnMap, compact = false }) => {
         {/* Location */}
         <div className="mb-3 flex items-center space-x-1 text-sm text-muted-foreground">
           <MapPin className="h-4 w-4" />
-          <span className="flex-1 truncate">{report.address}</span>
+          <span className="flex-1 truncate">{report.address || report.location || 'Location not specified'}</span>
           <Button
             variant="ghost"
             size="sm"
@@ -140,7 +140,7 @@ const PostCard = ({ report, onViewOnMap, compact = false }) => {
 
         {/* GPS Coordinates */}
         <div className="mb-3 text-xs text-muted-foreground font-mono">
-          {report.coords?.lat?.toFixed(4) || 'N/A'}, {report.coords?.lng?.toFixed(4) || 'N/A'}
+          {report.coords?.lat?.toFixed(4) || report.coords?.latitude?.toFixed(4) || 'N/A'}, {report.coords?.lng?.toFixed(4) || report.coords?.longitude?.toFixed(4) || 'N/A'}
         </div>
 
         {/* Verification Badges */}
@@ -162,7 +162,7 @@ const PostCard = ({ report, onViewOnMap, compact = false }) => {
               className="flex items-center space-x-1 text-muted-foreground hover:text-red-500"
             >
               <Heart className="h-4 w-4" />
-              <span className="text-xs">{report.likes}</span>
+              <span className="text-xs">{report.likes || 0}</span>
             </Button>
             
             <Button
@@ -171,7 +171,7 @@ const PostCard = ({ report, onViewOnMap, compact = false }) => {
               className="flex items-center space-x-1 text-muted-foreground hover:text-blue-500"
             >
               <MessageCircle className="h-4 w-4" />
-              <span className="text-xs">{report.comments}</span>
+              <span className="text-xs">{report.comments || 0}</span>
             </Button>
             
             <Button
@@ -180,7 +180,7 @@ const PostCard = ({ report, onViewOnMap, compact = false }) => {
               className="flex items-center space-x-1 text-muted-foreground hover:text-green-500"
             >
               <Share2 className="h-4 w-4" />
-              <span className="text-xs">{report.shares}</span>
+              <span className="text-xs">{report.shares || 0}</span>
             </Button>
           </div>
 
@@ -201,9 +201,9 @@ const PostCard = ({ report, onViewOnMap, compact = false }) => {
               AI Analysis
             </summary>
             <div className="mt-2 space-y-1 text-muted-foreground">
-              <div>Visual: {report.agents.visual_summary}</div>
-              <div>Weather: {report.agents.weather_check.status} ({report.agents.weather_check.source})</div>
-              <div>Assessment: {report.agents.reasoning}</div>
+              <div>Visual: {report.agents.visual_summary || 'Not available'}</div>
+              <div>Weather: {report.agents.weather_check?.status || 'Not available'} ({report.agents.weather_check?.source || 'Not available'})</div>
+              <div>Assessment: {report.agents.reasoning || 'Not available'}</div>
             </div>
           </details>
         )}

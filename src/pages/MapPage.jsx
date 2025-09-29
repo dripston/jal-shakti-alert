@@ -90,9 +90,13 @@ const MapPage = () => {
     // Check if there's a selected report from navigation
     const savedReport = localStorage.getItem('selectedReport');
     if (savedReport) {
-      const report = JSON.parse(savedReport);
-      setSelectedReport(report);
-      localStorage.removeItem('selectedReport');
+      try {
+        const report = JSON.parse(savedReport);
+        setSelectedReport(report);
+        localStorage.removeItem('selectedReport');
+      } catch (e) {
+        console.error('Error parsing saved report:', e);
+      }
     }
 
     return () => {
@@ -208,7 +212,14 @@ const MapPage = () => {
 
       const marker = L.marker([lat, lng], { icon })
         .addTo(map)
-        .on('click', () => setSelectedReport(report));
+        .on('click', () => {
+          // Add safety check for report object
+          if (report && typeof report === 'object') {
+            setSelectedReport(report);
+          } else {
+            console.error('Invalid report object:', report);
+          }
+        });
 
       // Add popup with basic info
       const popupContent = `
