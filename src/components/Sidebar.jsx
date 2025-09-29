@@ -39,9 +39,10 @@ const Sidebar = ({ isOpen, onClose }) => {
       ]
     },
     {
-      title: 'Summary',
+      title: 'Analytics',
       items: [
-        { icon: BarChart3, label: 'Summary Dashboard', path: '/dashboard/summary' }
+        { icon: BarChart3, label: 'Summary Dashboard', path: '/dashboard/summary' },
+        { icon: TrendingUp, label: 'Social Media Analytics', path: '/analytics/social' }
       ]
     }
   ];

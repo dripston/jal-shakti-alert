@@ -77,6 +77,12 @@ const AuthoritiesDashboard = () => {
     console.log('Assigning task for report:', reportId);
   };
 
+  // Function to clean visual summary (remove asterisks)
+  const cleanVisualSummary = (summary) => {
+    if (!summary) return '';
+    return summary.replace(/\*/g, '');
+  };
+
   return (
     <div className="py-6 lg:py-0 space-y-6">
       {/* Mobile Header */}
@@ -272,7 +278,7 @@ const AuthoritiesDashboard = () => {
                         <span>{new Date(report.timestamp).toLocaleString()}</span>
                       </div>
                       {report.description && (
-                        <p className="text-sm text-gray-700 mb-2">{report.description}</p>
+                        <p className="text-base text-gray-700 mb-2">{report.description}</p>
                       )}
                     </div>
                   </div>
@@ -281,18 +287,18 @@ const AuthoritiesDashboard = () => {
                   {report.authorityReport && !expandedReports[report.id] && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-medium text-blue-900">Authority Assessment</h4>
+                        <h4 className="text-base font-medium text-blue-900">Authority Assessment</h4>
                         <button 
                           onClick={() => setExpandedReports(prev => ({
                             ...prev,
                             [report.id]: true
                           }))}
-                          className="text-xs text-blue-600 hover:text-blue-800 underline"
+                          className="text-sm text-blue-600 hover:text-blue-800 underline"
                         >
-                          View full report
+                          View Details
                         </button>
                       </div>
-                      <div className="text-sm text-blue-800">
+                      <div className="text-base text-blue-800">
                         {report.authorityReport.split('\n').slice(0, 2).join('\n')}...
                       </div>
                     </div>
@@ -328,12 +334,12 @@ const AuthoritiesDashboard = () => {
                     return (
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-sm font-medium text-blue-900">Authority Assessment</h4>
-                          <span className="text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded-full">
+                          <h4 className="text-base font-medium text-blue-900">Authority Assessment</h4>
+                          <span className="text-sm text-blue-700 bg-blue-100 px-2 py-1 rounded-full">
                             {getAuthorityName(report.location || report.address)}
                           </span>
                         </div>
-                        <div className="text-sm text-blue-800 space-y-1 whitespace-pre-line">
+                        <div className="text-base text-blue-800 space-y-1 whitespace-pre-line">
                           {showFullReport ? report.authorityReport : shortReport}
                           {isLongReport && (
                             <button 
@@ -341,9 +347,9 @@ const AuthoritiesDashboard = () => {
                                 ...prev,
                                 [report.id]: !showFullReport
                               }))}
-                              className="text-xs text-blue-600 hover:text-blue-800 underline mt-2"
+                              className="text-sm text-blue-600 hover:text-blue-800 underline mt-2"
                             >
-                              {showFullReport ? 'Show less' : 'View full report'}
+                              {showFullReport ? 'View Less' : 'View Details'}
                             </button>
                           )}
                         </div>
@@ -354,18 +360,18 @@ const AuthoritiesDashboard = () => {
                   {/* Visual Analysis for Authorities */}
                   {report.visualSummary && (
                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                      <h4 className="text-sm font-medium text-gray-900 mb-2">🔍 Visual Analysis</h4>
-                      <div className="text-sm text-gray-700 whitespace-pre-line">
-                        {report.visualSummary}
+                      <h4 className="text-base font-medium text-gray-900 mb-2">Visual Analysis</h4>
+                      <div className="text-base text-gray-700 whitespace-pre-line">
+                        {cleanVisualSummary(report.visualSummary)}
                       </div>
                     </div>
                   )}
 
                   {/* Weather Context */}
-                  {report.weatherSummary && (
+                  {report.weatherSummary && !expandedReports[report.id] && (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                      <h4 className="text-sm font-medium text-green-900 mb-2">🌤️ Weather Context</h4>
-                      <div className="text-sm text-green-800 whitespace-pre-line">
+                      <h4 className="text-base font-medium text-green-900 mb-2">Weather Context</h4>
+                      <div className="text-base text-green-800 whitespace-pre-line">
                         {report.weatherSummary}
                       </div>
                     </div>
@@ -376,8 +382,8 @@ const AuthoritiesDashboard = () => {
                     <div className="space-y-3 border-t pt-3">
                       {report.trustReasoning && (
                         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                          <h4 className="text-sm font-medium text-yellow-900 mb-2">⚖️ Trust Evaluation Details</h4>
-                          <div className="text-sm text-yellow-800 whitespace-pre-line">
+                          <h4 className="text-base font-medium text-yellow-900 mb-2">Trust Evaluation Details</h4>
+                          <div className="text-base text-yellow-800 whitespace-pre-line">
                             {report.trustReasoning}
                           </div>
                         </div>
@@ -385,8 +391,8 @@ const AuthoritiesDashboard = () => {
                       
                       {report.publicAlert && (
                         <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                          <h4 className="text-sm font-medium text-red-900 mb-2">📢 Public Alert</h4>
-                          <div className="text-sm text-red-800 whitespace-pre-line">
+                          <h4 className="text-base font-medium text-red-900 mb-2">Public Alert</h4>
+                          <div className="text-base text-red-800 whitespace-pre-line">
                             {report.publicAlert}
                           </div>
                         </div>
@@ -394,9 +400,18 @@ const AuthoritiesDashboard = () => {
                       
                       {report.volunteerGuidance && (
                         <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                          <h4 className="text-sm font-medium text-green-900 mb-2">🦺 Volunteer Guidance</h4>
-                          <div className="text-sm text-green-800 whitespace-pre-line">
+                          <h4 className="text-base font-medium text-green-900 mb-2">Volunteer Guidance</h4>
+                          <div className="text-base text-green-800 whitespace-pre-line">
                             {report.volunteerGuidance}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {report.weatherSummary && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                          <h4 className="text-base font-medium text-blue-900 mb-2">Weather Context</h4>
+                          <div className="text-base text-blue-800 whitespace-pre-line">
+                            {report.weatherSummary}
                           </div>
                         </div>
                       )}
@@ -446,7 +461,7 @@ const AuthoritiesDashboard = () => {
                       }))}
                     >
                       <Eye className="h-4 w-4 mr-1" />
-                      {expandedReports[report.id] ? 'Hide Details' : 'View Details'}
+                      {expandedReports[report.id] ? 'View Less' : 'View Details'}
                     </Button>
                     
                     <Button 
@@ -460,8 +475,8 @@ const AuthoritiesDashboard = () => {
                   
                   {/* Quick Summary */}
                   <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                    <div className="text-xs text-blue-600 font-medium mb-1">Status Summary</div>
-                    <div className="text-xs text-blue-700">
+                    <div className="text-sm text-blue-600 font-medium mb-1">Status Summary</div>
+                    <div className="text-sm text-blue-700">
                       Risk Level: {(report.alert_level || 'medium').toUpperCase()}
                       {report.status === 'approved' && (
                         <span className="text-green-700 font-medium ml-2">• ✓ Approved</span>

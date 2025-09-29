@@ -20,13 +20,12 @@ import UsersDashboard from './pages/dashboards/UsersDashboard';
 import VolunteersDashboard from './pages/dashboards/VolunteersDashboard';
 
 import SummaryDashboard from './pages/dashboards/SummaryDashboard';
+import SocialMediaAnalytics from './pages/SocialMediaAnalytics';
 import SettingsPage from './pages/SettingsPage';
 import NotFound from './pages/NotFound';
 import Notification from './components/Notification';
 
 const queryClient = new QueryClient();
-
-
 
 // Main App Layout
 const AppLayout = () => {
@@ -90,6 +89,7 @@ const AppLayout = () => {
               <Route path="/dashboard/users" element={<UsersDashboard />} />
               <Route path="/dashboard/volunteers" element={<VolunteersDashboard />} />
               <Route path="/dashboard/summary" element={<SummaryDashboard />} />
+              <Route path="/analytics/social" element={<SocialMediaAnalytics />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

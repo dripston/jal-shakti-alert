@@ -22,11 +22,62 @@ const MapPage = () => {
   const markersRef = useRef([]);
   const { allReports } = useReports();
   
-  // Filter out rejected reports for consistency with dashboards
-  const reports = allReports.filter(report => report && report.status !== 'rejected');
+  // Use dummy data if no reports are available
+  const reports = allReports && allReports.length > 0 
+    ? allReports.filter(report => report && report.status !== 'rejected')
+    : [
+        {
+          id: 'r1',
+          userId: 'u1',
+          image: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=600&h=400&fit=crop',
+          coords: { latitude: 13.0827, longitude: 80.2707 },
+          address: 'Marina Beach, Chennai, Tamil Nadu, India',
+          timestamp: '2025-09-26T14:15:00+05:30',
+          visual_tag: 'oil_slick',
+          description: 'Large oil slick spotted near the fishing area. Affecting local marine life.',
+          trust_score: 62,
+          status: 'queued',
+          likes: 8,
+          comments: 3,
+          shares: 2,
+          alert_level: 'medium'
+        },
+        {
+          id: 'r2',
+          userId: 'u2',
+          image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=600&h=400&fit=crop',
+          coords: { latitude: 17.6868, longitude: 83.2185 },
+          address: 'RK Beach, Visakhapatnam, Andhra Pradesh, India',
+          timestamp: '2025-09-27T09:20:00+05:30',
+          visual_tag: 'marine_debris',
+          description: 'Massive plastic debris accumulation after yesterday\'s storm. Immediate cleanup needed.',
+          trust_score: 84,
+          status: 'synced',
+          likes: 15,
+          comments: 7,
+          shares: 5,
+          alert_level: 'high'
+        },
+        {
+          id: 'r3',
+          userId: 'u3',
+          image: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=600&h=400&fit=crop',
+          coords: { latitude: 9.9312, longitude: 76.2673 },
+          address: 'Fort Kochi Beach, Kochi, Kerala, India',
+          timestamp: '2025-09-27T11:45:00+05:30',
+          visual_tag: 'algae_bloom',
+          description: 'Unusual algae bloom covering large area. Fish mortality observed.',
+          trust_score: 89,
+          status: 'verified',
+          likes: 23,
+          comments: 12,
+          shares: 9,
+          alert_level: 'high'
+        }
+      ];
   
-  console.log('All reports:', allReports.length);
-  console.log('Filtered reports for map:', reports.length);
+  console.log('All reports:', allReports?.length);
+  console.log('Filtered reports for map:', reports?.length);
   console.log('Sample report:', reports[0]);
   
   const [selectedReport, setSelectedReport] = useState(null);
@@ -120,7 +171,7 @@ const MapPage = () => {
     markersRef.current = [];
 
     // Add markers for each report
-    console.log('Total reports for map:', reports.length);
+    console.log('Total reports for map:', reports?.length);
     reports.forEach(report => {
       // Skip if report doesn't have valid coordinates
       const lat = report.coords?.latitude || report.latitude;
@@ -133,7 +184,7 @@ const MapPage = () => {
       
       console.log('Adding marker for report:', report.id, 'at', lat, lng);
       
-      const markerColor = getMarkerColor(report.trustScore || report.trust_score, report.alert_level);
+      const markerColor = getMarkerColor(report.trust_score, report.alert_level);
       
       // Create custom icon based on trust score and alert level
       const icon = L.divIcon({
@@ -166,10 +217,10 @@ const MapPage = () => {
           <div style="font-size: 12px; color: #666; margin-bottom: 5px;">${report.address || report.location || 'Location not specified'}</div>
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div style="background: ${markerColor}; color: white; padding: 2px 6px; border-radius: 10px; font-size: 11px;">
-              Trust: ${report.trustScore || report.trust_score || 0}%
+              Trust: ${report.trust_score || 0}%
             </div>
             <div style="font-size: 11px; color: #666;">
-              ${new Date(report.timestamp || report.created_at).toLocaleDateString()}
+              ${new Date(report.timestamp).toLocaleDateString()}
             </div>
           </div>
         </div>
@@ -314,7 +365,7 @@ const MapPage = () => {
               </div>
               <div>
                 <div className="text-lg font-bold text-green-600">
-                  {reports.filter(r => r.status === 'approved').length}
+                  {reports.filter(r => r.status === 'verified' || r.status === 'approved').length}
                 </div>
                 <div className="text-xs text-muted-foreground">Approved</div>
               </div>
