@@ -2,11 +2,13 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 
-const dbPath = process.env.DB_PATH || './database/oceanwatch.db';
+// Use /tmp directory for Vercel serverless environment
+const isVercel = process.env.VERCEL || process.env.NODE_ENV === 'production';
+const dbPath = isVercel ? '/tmp/oceanwatch.db' : (process.env.DB_PATH || './database/oceanwatch.db');
 const dbDir = path.dirname(dbPath);
 
-// Ensure database directory exists
-if (!fs.existsSync(dbDir)) {
+// Ensure database directory exists (only needed for local development)
+if (!isVercel && !fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
 }
 
@@ -19,9 +21,17 @@ const db = new sqlite3.Database(dbPath, (err) => {
   }
 });
 
+// Track if database has been initialized
+let isInitialized = false;
+
 // Initialize database tables
 const initializeDatabase = () => {
   return new Promise((resolve, reject) => {
+    // Skip if already initialized
+    if (isInitialized) {
+      return resolve();
+    }
+
     db.serialize(() => {
       // Users table
       db.run(`
@@ -107,6 +117,7 @@ const initializeDatabase = () => {
           reject(err);
         } else {
           console.log('✅ Database tables initialized');
+          isInitialized = true;
           resolve();
         }
       });
@@ -114,7 +125,15 @@ const initializeDatabase = () => {
   });
 };
 
+// Ensure database is initialized before operations
+const ensureInitialized = async () => {
+  if (!isInitialized) {
+    await initializeDatabase();
+  }
+};
+
 module.exports = {
   db,
-  initializeDatabase
+  initializeDatabase,
+  ensureInitialized
 };

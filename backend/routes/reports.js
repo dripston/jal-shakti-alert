@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const FormData = require('form-data');
 const fetch = require('node-fetch');
-const { db } = require('../config/database');
+const { db, ensureInitialized } = require('../config/database');
 const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 
@@ -110,6 +110,9 @@ router.post('/process', upload.single('image'), async (req, res) => {
 // Get all reports
 router.get('/', async (req, res) => {
   try {
+    // Ensure database is initialized
+    await ensureInitialized();
+    
     db.all(
       'SELECT * FROM reports ORDER BY created_at DESC LIMIT 100',
       [],
@@ -138,6 +141,9 @@ router.get('/', async (req, res) => {
 // Save processed report to database
 router.post('/save', async (req, res) => {
   try {
+    // Ensure database is initialized
+    await ensureInitialized();
+    
     const report = req.body;
     
     // Add ID if not present

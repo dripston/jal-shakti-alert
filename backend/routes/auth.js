@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
-const { db } = require('../config/database');
+const { db, ensureInitialized } = require('../config/database');
 
 const router = express.Router();
 
@@ -25,6 +25,8 @@ router.post('/register', async (req, res) => {
   }
 
   try {
+    // Ensure database is initialized
+    await ensureInitialized();
     // Check if user already exists
     db.get(
       'SELECT id FROM users WHERE username = ? OR email = ?',
@@ -86,7 +88,7 @@ router.post('/register', async (req, res) => {
 });
 
 // POST /api/auth/login - Login user
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
@@ -95,8 +97,12 @@ router.post('/login', (req, res) => {
     });
   }
 
-  // Find user by username or email
-  db.get(
+  try {
+    // Ensure database is initialized
+    await ensureInitialized();
+
+    // Find user by username or email
+    db.get(
     'SELECT * FROM users WHERE username = ? OR email = ?',
     [username, username],
     async (err, user) => {
@@ -152,6 +158,10 @@ router.post('/login', (req, res) => {
       }
     }
   );
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Login failed' });
+  }
 });
 
 // POST /api/auth/verify - Verify JWT token
