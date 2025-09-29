@@ -23,7 +23,7 @@ const SocialPost = ({ report }) => {
     return reportTime.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
   };
 
-  // Clean up text by removing markdown and converting to bullet points
+  // Clean up text by removing markdown and converting to clean paragraphs
   const formatText = (text) => {
     if (!text) return '';
     
@@ -33,6 +33,7 @@ const SocialPost = ({ report }) => {
       .replace(/\*(.*?)\*/g, '$1')     // Remove *italic*
       .replace(/^\s*\*\s+/gm, '• ')    // Convert * bullets to •
       .replace(/^\s*-\s+/gm, '• ')     // Convert - bullets to •
+      .replace(/\*/g, '')              // Remove any remaining asterisks
       .trim();
     
     return cleaned;
@@ -179,8 +180,8 @@ const SocialPost = ({ report }) => {
         {activeTab === 'visual' && report.visualSummary && (
           <div className="bg-gray-50 rounded-lg p-4 mb-4">
             <h4 className="font-medium text-gray-900 mb-2">Visual Analysis</h4>
-            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-              {report.visualSummary}
+            <p className="text-sm text-gray-700 leading-relaxed">
+              {formatText(report.visualSummary)}
             </p>
           </div>
         )}
@@ -188,8 +189,8 @@ const SocialPost = ({ report }) => {
         {activeTab === 'weather' && report.weatherSummary && (
           <div className="bg-blue-50 rounded-lg p-4 mb-4">
             <h4 className="font-medium text-gray-900 mb-2">Weather Analysis</h4>
-            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-              {report.weatherSummary}
+            <p className="text-sm text-gray-700 leading-relaxed">
+              {formatText(report.weatherSummary)}
             </p>
           </div>
         )}

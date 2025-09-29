@@ -18,7 +18,6 @@ import {
   Eye
 } from 'lucide-react';
 
-
 const AuthoritiesDashboard = () => {
   const { allReports, exportReports } = useReports();
   const [selectedPriority, setSelectedPriority] = useState('all');
@@ -31,33 +30,37 @@ const AuthoritiesDashboard = () => {
     if (!report) return false;
     // Only show processed reports with sufficient trust score for authorities
     if (report.status !== 'processed') return false;
-    if ((report.trustScore || report.trust_score || 0) < 30) return false; // Minimum threshold
-    if (selectedPriority !== 'all' && report.alert_level !== selectedPriority) return false;
-    if (selectedStatus !== 'all') {
-      // Map status for authorities view
-      const authStatus = (report.trustScore || report.trust_score || 0) >= 70 ? 'approved' : 'pending';
-      if (authStatus !== selectedStatus) return false;
+    
+    // Apply priority filter
+    if (selectedPriority !== 'all' && report.alert_level !== selectedPriority) {
+      return false;
     }
+    
+    // Apply status filter
+    if (selectedStatus !== 'all' && report.status !== selectedStatus) {
+      return false;
+    }
+    
     return true;
   });
 
-  // Sort by priority and timestamp
-  const sortedReports = [...filteredReports].sort((a, b) => {
-    const priorityOrder = { high: 3, medium: 2, low: 1 };
-    const aPriority = priorityOrder[a.alert_level] || 0;
-    const bPriority = priorityOrder[b.alert_level] || 0;
-    
-    if (aPriority !== bPriority) return bPriority - aPriority;
-    return new Date(b.timestamp) - new Date(a.timestamp);
-  });
+  // Separate reports by verification status
+  const nonRejectedReports = filteredReports.filter(r => r && r.status !== 'rejected');
+  const verifiedReports = nonRejectedReports.filter(r => r && r.status === 'processed');
+  
+  // Calculate statistics
+  const stats = {
+    totalReports: nonRejectedReports.length,
+    verified: verifiedReports.length,
+    pending: nonRejectedReports.filter(r => r && r.status === 'pending').length,
+    highPriority: nonRejectedReports.filter(r => r && r.alert_level === 'high').length
+  };
 
-  // Statistics (exclude rejected reports)
-  const nonRejectedReports = allReports.filter(r => r && r.status !== 'rejected');
-  const highPriorityReports = nonRejectedReports.filter(r => r.alert_level === 'high').length;
-  const pendingVerification = nonRejectedReports.filter(r => r.status === 'pending' || r.status === 'processing').length;
-  const approvedToday = nonRejectedReports.filter(r => {
-    const today = new Date().toDateString();
+  // Calculate today's reports
+  const todayReports = nonRejectedReports.filter(r => {
+    if (!r || !r.timestamp) return false;
     const reportDate = new Date(r.timestamp).toDateString();
+    const today = new Date().toDateString();
     return reportDate === today && (r.status === 'processed' || r.status === 'approved');
   }).length;
   const totalApproved = nonRejectedReports.filter(r => r.status === 'processed' || r.status === 'approved').length;
@@ -77,10 +80,16 @@ const AuthoritiesDashboard = () => {
     console.log('Assigning task for report:', reportId);
   };
 
-  // Function to clean visual summary (remove asterisks)
+  // Function to clean visual summary (remove asterisks and format properly)
   const cleanVisualSummary = (summary) => {
     if (!summary) return '';
-    return summary.replace(/\*/g, '');
+    
+    // Remove markdown asterisks and formatting
+    return summary
+      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove **bold**
+      .replace(/\*(.*?)\*/g, '$1')     // Remove *italic*
+      .replace(/\*/g, '')              // Remove any remaining asterisks
+      .trim();
   };
 
   return (
@@ -93,87 +102,64 @@ const AuthoritiesDashboard = () => {
           </div>
           <div>
             <h1 className="text-xl font-heading font-bold">Authorities Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Verify reports and coordinate response actions</p>
-          </div>
-        </div>
-        
-        <Button variant="outline" size="sm" onClick={() => exportReports('json')}>
-          <Download className="h-4 w-4 mr-1" />
-          Export
-        </Button>
-      </div>
-      
-      {/* Desktop Header */}
-      <div className="hidden lg:block bg-white rounded-lg border border-gray-200 p-6 mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center">
-              <Shield className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Authorities Dashboard</h1>
-              <p className="text-gray-600">Verify reports and coordinate emergency response actions</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-3">
-            <Button variant="outline" onClick={() => exportReports('json')}>
-              <Download className="h-4 w-4 mr-2" />
-              Export Reports
-            </Button>
-            <Button>
-              <Users className="h-4 w-4 mr-2" />
-              Assign Tasks
-            </Button>
+            <p className="text-xs text-muted-foreground">Monitor and respond to reports</p>
           </div>
         </div>
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 px-4 lg:px-0">
-        <Card className="border-red-200 bg-red-50">
-          <CardContent className="pt-4 lg:pt-6">
-            <div className="flex items-center space-x-2">
-              <AlertTriangle className="h-5 w-5 lg:h-6 lg:w-6 text-red-600" />
+      {/* Stats Overview */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-4">
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <FileText className="h-5 w-5 text-blue-600" />
+              </div>
               <div>
-                <p className="text-xl lg:text-2xl font-bold text-red-600">{highPriorityReports}</p>
-                <p className="text-xs lg:text-sm text-red-600">High Priority</p>
+                <p className="text-xl font-bold">{stats.totalReports}</p>
+                <p className="text-xs text-muted-foreground">Total Reports</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardContent className="pt-4 lg:pt-6">
-            <div className="flex items-center space-x-2">
-              <Clock className="h-5 w-5 lg:h-6 lg:w-6 text-yellow-600" />
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              </div>
               <div>
-                <p className="text-xl lg:text-2xl font-bold text-yellow-600">{pendingVerification}</p>
-                <p className="text-xs lg:text-sm text-yellow-600">Pending Review</p>
+                <p className="text-xl font-bold text-green-600">{stats.verified}</p>
+                <p className="text-xs text-muted-foreground">Verified</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-green-200 bg-green-50">
-          <CardContent className="pt-4 lg:pt-6">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5 lg:h-6 lg:w-6 text-green-600" />
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+              </div>
               <div>
-                <p className="text-xl lg:text-2xl font-bold text-green-600">{approvedToday}</p>
-                <p className="text-xs lg:text-sm text-green-600">Approved Today</p>
+                <p className="text-xl font-bold text-red-500">{stats.highPriority}</p>
+                <p className="text-xs text-muted-foreground">High Priority</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-blue-200 bg-blue-50">
-          <CardContent className="pt-4 lg:pt-6">
-            <div className="flex items-center space-x-2">
-              <FileText className="h-5 w-5 lg:h-6 lg:w-6 text-blue-600" />
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <Clock className="h-5 w-5 text-yellow-500" />
+              </div>
               <div>
-                <p className="text-xl lg:text-2xl font-bold text-blue-600">{totalApproved}</p>
-                <p className="text-xs lg:text-sm text-blue-600">Total Approved</p>
+                <p className="text-xl font-bold text-yellow-500">{todayReports}</p>
+                <p className="text-xs text-muted-foreground">Today</p>
               </div>
             </div>
           </CardContent>
@@ -181,187 +167,133 @@ const AuthoritiesDashboard = () => {
       </div>
 
       {/* Filters */}
-      <div className="px-4 lg:px-0">
-        <Card>
-          <CardContent className="pt-4 lg:pt-6">
-            <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
-              <div className="flex-1">
-                <Select value={selectedPriority} onValueChange={setSelectedPriority}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Filter by priority" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Priorities</SelectItem>
-                    <SelectItem value="high">High Priority</SelectItem>
-                    <SelectItem value="medium">Medium Priority</SelectItem>
-                    <SelectItem value="low">Low Priority</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex-1">
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="pending">Pending Review</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="mt-4 flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-2 lg:space-y-0 text-sm text-muted-foreground">
-              <span>Showing {sortedReports.length} reports</span>
-              <Badge variant="secondary">
-                {highPriorityReports} require immediate attention
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="flex flex-col sm:flex-row gap-3 px-4">
+        <div className="flex-1">
+          <Select value={selectedPriority} onValueChange={setSelectedPriority}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by priority" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Priorities</SelectItem>
+              <SelectItem value="high">High Priority</SelectItem>
+              <SelectItem value="medium">Medium Priority</SelectItem>
+              <SelectItem value="low">Low Priority</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="flex-1">
+          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="processed">Verified</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <Button variant="outline" onClick={() => exportReports('json')} className="flex items-center">
+          <Download className="h-4 w-4 mr-2" />
+          Export
+        </Button>
       </div>
 
       {/* Reports List */}
-      <div className="space-y-4 px-4 lg:px-0">
-        <h2 className="text-lg lg:text-xl font-heading font-semibold">Reports for Review</h2>
-        
-        {sortedReports.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-8">
-              <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-600" />
-              <h3 className="font-medium mb-2">All caught up!</h3>
-              <p className="text-sm text-muted-foreground">
-                No reports match your current filters.
-              </p>
-            </CardContent>
-          </Card>
+      <div className="space-y-4 px-4 pb-20 lg:pb-6">
+        {filteredReports.length === 0 ? (
+          <div className="text-center py-12">
+            <Shield className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-1">No reports found</h3>
+            <p className="text-muted-foreground">Adjust your filters or check back later</p>
+          </div>
         ) : (
-          sortedReports.map((report) => (
-            <Card key={report.id} className={`${
-              report.alert_level === 'high' ? 'border-red-300 bg-red-50/50' : 
-              report.status === 'queued' ? 'border-yellow-300 bg-yellow-50/50' : ''
-            }`}>
-              <CardContent className="p-4">
-                {/* Authority-specific report view */}
-                <div className="space-y-3">
-                  {/* Basic Report Info */}
-                  <div className="flex items-start space-x-3">
-                    {report.image && (
-                      <img 
-                        src={report.image} 
-                        alt="Report" 
-                        className="w-16 h-16 object-cover rounded-lg"
-                      />
-                    )}
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <Badge variant={
-                          report.alert_level === 'high' ? 'destructive' : 
-                          report.alert_level === 'medium' ? 'default' : 'secondary'
-                        }>
-                          {report.alert_level?.toUpperCase() || 'MEDIUM'}
-                        </Badge>
-                        <Badge variant={
-                          report.status === 'processed' ? 'default' : 
-                          report.status === 'rejected' ? 'destructive' : 'secondary'
-                        }>
-                          {report.pipelineStatus || report.status?.toUpperCase()}
+          filteredReports.map((report) => {
+            // Safety check
+            if (!report) return null;
+            
+            const isExpanded = expandedReports[report.id];
+            const actualTrustScore = report.trustScore || report.trust_score || 0;
+            
+            // Truncate report for preview
+            const shortReport = report.authorityReport 
+              ? report.authorityReport.substring(0, 150) + (report.authorityReport.length > 150 ? '...' : '')
+              : 'No authority report available';
+            const isLongReport = report.authorityReport && report.authorityReport.length > 150;
+            
+            return (
+              <div key={report.id} className="bg-white rounded-xl border border-gray-200 shadow-sm">
+                <div className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <h3 className="font-medium text-gray-900 truncate">
+                          {report.visual_tag?.replace(/_/g, ' ') || 'Water Hazard Report'}
+                        </h3>
+                        <Badge 
+                          variant={
+                            report.alert_level === 'high' ? 'destructive' : 
+                            report.alert_level === 'medium' ? 'secondary' : 'default'
+                          }
+                        >
+                          {report.alert_level || 'medium'}
                         </Badge>
                       </div>
+                      
                       <div className="flex items-center text-sm text-muted-foreground mb-2">
-                        <MapPin className="h-4 w-4 mr-1" />
-                        <span>{report.location || report.address}</span>
+                        <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
+                        <span className="truncate">{report.address || 'Location not specified'}</span>
+                      </div>
+                      
+                      <div className="flex items-center text-xs text-muted-foreground">
+                        <span>Trust: {actualTrustScore}%</span>
                         <span className="mx-2">•</span>
-                        <Clock className="h-4 w-4 mr-1" />
                         <span>{new Date(report.timestamp).toLocaleString()}</span>
                       </div>
-                      {report.description && (
-                        <p className="text-base text-gray-700 mb-2">{report.description}</p>
-                      )}
                     </div>
+                    
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => setExpandedReports(prev => ({
+                        ...prev,
+                        [report.id]: !isExpanded
+                      }))}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                   </div>
-
-                  {/* Authority Report Content - Collapsed by Default */}
-                  {report.authorityReport && !expandedReports[report.id] && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-base font-medium text-blue-900">Authority Assessment</h4>
-                        <button 
-                          onClick={() => setExpandedReports(prev => ({
-                            ...prev,
-                            [report.id]: true
-                          }))}
-                          className="text-sm text-blue-600 hover:text-blue-800 underline"
-                        >
-                          View Details
-                        </button>
-                      </div>
-                      <div className="text-base text-blue-800">
-                        {report.authorityReport.split('\n').slice(0, 2).join('\n')}...
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Full Authority Report Content */}
-                  {report.authorityReport && expandedReports[report.id] && (() => {
-                    const getAuthorityName = (location) => {
-                      const cityAuthorities = {
-                        'Chennai': 'M.K. Stalin (Chief Minister)',
-                        'Mumbai': 'Eknath Shinde (Chief Minister)', 
-                        'Bangalore': 'Siddaramaiah (Chief Minister)',
-                        'Delhi': 'Arvind Kejriwal (Chief Minister)',
-                        'Kolkata': 'Mamata Banerjee (Chief Minister)',
-                        'Hyderabad': 'A. Revanth Reddy (Chief Minister)',
-                        'Pune': 'Eknath Shinde (Chief Minister)',
-                        'Ahmedabad': 'Bhupendra Patel (Chief Minister)',
-                        'Kochi': 'Pinarayi Vijayan (Chief Minister)',
-                        'Visakhapatnam': 'Y.S. Jagan Mohan Reddy (Chief Minister)'
-                      };
-                      
-                      const city = Object.keys(cityAuthorities).find(city => 
-                        (location || '').toLowerCase().includes(city.toLowerCase())
-                      );
-                      return city ? cityAuthorities[city] : 'Regional Authority';
-                    };
-
-                    const showFullReport = expandedReports[report.id] || false;
-                    const reportLines = report.authorityReport.split('\n').filter(line => line.trim());
-                    const shortReport = reportLines.slice(0, 3).join('\n');
-                    const isLongReport = reportLines.length > 3;
-
-                    return (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-base font-medium text-blue-900">Authority Assessment</h4>
-                          <span className="text-sm text-blue-700 bg-blue-100 px-2 py-1 rounded-full">
-                            {getAuthorityName(report.location || report.address)}
-                          </span>
-                        </div>
-                        <div className="text-base text-blue-800 space-y-1 whitespace-pre-line">
-                          {showFullReport ? report.authorityReport : shortReport}
+                  
+                  {/* Preview of Authority Report */}
+                  {(() => {
+                    if (!isExpanded) {
+                      return (
+                        <div className="mt-3 text-sm text-gray-600">
+                          {shortReport}
                           {isLongReport && (
                             <button 
                               onClick={() => setExpandedReports(prev => ({
                                 ...prev,
-                                [report.id]: !showFullReport
+                                [report.id]: true
                               }))}
-                              className="text-sm text-blue-600 hover:text-blue-800 underline mt-2"
+                              className="text-blue-600 hover:text-blue-800 underline ml-1"
                             >
-                              {showFullReport ? 'View Less' : 'View Details'}
+                              View Details
                             </button>
                           )}
                         </div>
-                      </div>
-                    );
+                      );
+                    }
+                    return null;
                   })()}
 
                   {/* Visual Analysis for Authorities */}
                   {report.visualSummary && (
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mt-3">
                       <h4 className="text-base font-medium text-gray-900 mb-2">Visual Analysis</h4>
-                      <div className="text-base text-gray-700 whitespace-pre-line">
+                      <div className="text-base text-gray-700">
                         {cleanVisualSummary(report.visualSummary)}
                       </div>
                     </div>
@@ -369,133 +301,94 @@ const AuthoritiesDashboard = () => {
 
                   {/* Weather Context */}
                   {report.weatherSummary && !expandedReports[report.id] && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-3">
                       <h4 className="text-base font-medium text-green-900 mb-2">Weather Context</h4>
-                      <div className="text-base text-green-800 whitespace-pre-line">
-                        {report.weatherSummary}
+                      <div className="text-base text-green-800">
+                        {cleanVisualSummary(report.weatherSummary)}
                       </div>
                     </div>
                   )}
 
                   {/* Expanded Details */}
                   {expandedReports[report.id] && (
-                    <div className="space-y-3 border-t pt-3">
+                    <div className="space-y-3 border-t pt-3 mt-3">
                       {report.trustReasoning && (
                         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                          <h4 className="text-base font-medium text-yellow-900 mb-2">Trust Evaluation Details</h4>
-                          <div className="text-base text-yellow-800 whitespace-pre-line">
-                            {report.trustReasoning}
+                          <h4 className="text-sm font-medium text-yellow-900 mb-2">Trust Evaluation</h4>
+                          <div className="text-sm text-yellow-800">
+                            {cleanVisualSummary(report.trustReasoning)}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {report.authorityReport && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                          <h4 className="text-sm font-medium text-red-900 mb-2">Authority Assessment</h4>
+                          <div className="text-sm text-red-800 whitespace-pre-line">
+                            {cleanVisualSummary(report.authorityReport)}
                           </div>
                         </div>
                       )}
                       
                       {report.publicAlert && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                          <h4 className="text-base font-medium text-red-900 mb-2">Public Alert</h4>
-                          <div className="text-base text-red-800 whitespace-pre-line">
-                            {report.publicAlert}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                          <h4 className="text-sm font-medium text-blue-900 mb-2">Public Communication</h4>
+                          <div className="text-sm text-blue-800">
+                            {cleanVisualSummary(report.publicAlert)}
                           </div>
                         </div>
                       )}
                       
                       {report.volunteerGuidance && (
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                          <h4 className="text-base font-medium text-green-900 mb-2">Volunteer Guidance</h4>
-                          <div className="text-base text-green-800 whitespace-pre-line">
-                            {report.volunteerGuidance}
+                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                          <h4 className="text-sm font-medium text-purple-900 mb-2">Volunteer Guidance</h4>
+                          <div className="text-sm text-purple-800">
+                            {cleanVisualSummary(report.volunteerGuidance)}
                           </div>
                         </div>
                       )}
                       
                       {report.weatherSummary && (
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                          <h4 className="text-base font-medium text-blue-900 mb-2">Weather Context</h4>
-                          <div className="text-base text-blue-800 whitespace-pre-line">
-                            {report.weatherSummary}
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                          <h4 className="text-sm font-medium text-green-900 mb-2">Weather Analysis</h4>
+                          <div className="text-sm text-green-800">
+                            {cleanVisualSummary(report.weatherSummary)}
                           </div>
                         </div>
                       )}
+                      
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        <Button size="sm" variant="outline" className="text-green-700 border-green-300">
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Verify
+                        </Button>
+                        <Button size="sm" variant="outline" className="text-red-700 border-red-300">
+                          <AlertTriangle className="h-4 w-4 mr-1" />
+                          Reject
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <Users className="h-4 w-4 mr-1" />
+                          Assign Task
+                        </Button>
+                      </div>
+                      
+                      <button 
+                        onClick={() => setExpandedReports(prev => ({
+                          ...prev,
+                          [report.id]: false
+                        }))}
+                        className="text-sm text-blue-600 hover:text-blue-800 underline"
+                      >
+                        View Less
+                      </button>
                     </div>
                   )}
                 </div>
-                
-                {/* Authority Actions */}
-                <div className="mt-4 pt-4 border-t bg-muted/20 -mx-4 px-4 -mb-4 pb-4">
-                  <div className="flex flex-wrap gap-2">
-                    {report.status === 'pending' && (
-                      <>
-                        <Button 
-                          size="sm" 
-                          className="bg-green-600 hover:bg-green-700"
-                          onClick={() => handleVerifyReport(report.id)}
-                        >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Approve Report
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          className="border-red-300 text-red-600 hover:bg-red-50"
-                          onClick={() => handleRejectReport(report.id)}
-                        >
-                          Reject Report
-                        </Button>
-                      </>
-                    )}
-                    
-                    <Button 
-                      size="sm" 
-                      className="bg-purple-600 hover:bg-purple-700 text-white"
-                      onClick={() => handleAssignTask(report.id)}
-                    >
-                      <Users className="h-4 w-4 mr-1" />
-                      Assign to Volunteers
-                    </Button>
-                    
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => setExpandedReports(prev => ({
-                        ...prev,
-                        [report.id]: !prev[report.id]
-                      }))}
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      {expandedReports[report.id] ? 'View Less' : 'View Details'}
-                    </Button>
-                    
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                    >
-                      <MapPin className="h-4 w-4 mr-1" />
-                      Dispatch Team
-                    </Button>
-                  </div>
-                  
-                  {/* Quick Summary */}
-                  <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                    <div className="text-sm text-blue-600 font-medium mb-1">Status Summary</div>
-                    <div className="text-sm text-blue-700">
-                      Risk Level: {(report.alert_level || 'medium').toUpperCase()}
-                      {report.status === 'approved' && (
-                        <span className="text-green-700 font-medium ml-2">• ✓ Approved</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+              </div>
+            );
+          })
         )}
       </div>
-      
-      {/* Load More */}
-      {sortedReports.length > 0 && sortedReports.length >= 10 && (
-        <div className="text-center">
-          <Button variant="outline">Load More Reports</Button>
-        </div>
-      )}
     </div>
   );
 };

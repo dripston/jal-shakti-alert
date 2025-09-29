@@ -1,137 +1,235 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { useReports } from '../../contexts/ReportsContext';
-import { Users, MapPin, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
+import { 
+  Users, 
+  CheckCircle, 
+  AlertTriangle, 
+  Clock, 
+  MapPin, 
+  FileText,
+  Eye
+} from 'lucide-react';
 
 const VolunteersDashboard = () => {
   const { allReports } = useReports();
-  const [expandedTasks, setExpandedTasks] = React.useState({});
-  
-  // Show processed reports as volunteer tasks - different from authorities
-  const tasks = allReports.filter(r => 
-    r && // Safety check
-    r.status === 'processed' && 
-    (r.trustScore || r.trust_score || 0) >= 50 && // Higher threshold for volunteer tasks
-    r.volunteerGuidance // Only show if there's volunteer guidance available
-  ).slice(0, 10);
-  const completedTasks = Math.floor(tasks.length * 0.6);
+  const [selectedPriority, setSelectedPriority] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [expandedTasks, setExpandedTasks] = useState({});
+
+  // Filter reports for volunteers - show processed reports with volunteer guidance
+  const volunteerTasks = allReports.filter(report => {
+    // Safety check
+    if (!report) return false;
+    
+    // Only show processed reports with volunteer guidance
+    if (report.status !== 'processed' || !report.volunteerGuidance) return false;
+    
+    // Apply priority filter
+    if (selectedPriority !== 'all' && report.alert_level !== selectedPriority) {
+      return false;
+    }
+    
+    return true;
+  });
+
+  // Calculate statistics
+  const stats = {
+    totalTasks: volunteerTasks.length,
+    highPriority: volunteerTasks.filter(t => t.alert_level === 'high').length,
+    completed: volunteerTasks.filter(t => t.volunteerStatus === 'completed').length,
+    inProgress: volunteerTasks.filter(t => t.volunteerStatus === 'in-progress').length
+  };
+
+  // Function to clean visual summary (remove asterisks and format properly)
+  const cleanVisualSummary = (summary) => {
+    if (!summary) return '';
+    
+    // Remove markdown asterisks and formatting
+    return summary
+      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove **bold**
+      .replace(/\*(.*?)\*/g, '$1')     // Remove *italic*
+      .replace(/\*/g, '')              // Remove any remaining asterisks
+      .trim();
+  };
+
+  const handleTaskAction = (taskId, action) => {
+    // In real app, this would make API call to update task status
+    console.log(`Task ${taskId}: ${action}`);
+  };
 
   return (
     <div className="py-6 lg:py-0 space-y-6">
       {/* Mobile Header */}
       <div className="lg:hidden flex items-center justify-between px-4">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center">
             <Users className="h-5 w-5 text-white" />
           </div>
           <div>
             <h1 className="text-xl font-heading font-bold">Volunteers Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Coordinate response tasks and assignments</p>
+            <p className="text-xs text-muted-foreground">Community action tasks</p>
           </div>
         </div>
       </div>
 
-      {/* Desktop Header */}
-      <div className="hidden lg:block">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center">
-              <Users className="h-6 w-6 text-white" />
+      {/* Stats Overview */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-4">
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <FileText className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-xl font-bold">{stats.totalTasks}</p>
+                <p className="text-xs text-muted-foreground">Active Tasks</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-heading font-bold">Volunteers Dashboard</h1>
-              <p className="text-muted-foreground">Coordinate response tasks and assignments</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-red-500">{stats.highPriority}</p>
+                <p className="text-xs text-muted-foreground">High Priority</p>
+              </div>
             </div>
-          </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Clock className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-blue-600">{stats.inProgress}</p>
+                <p className="text-xs text-muted-foreground">In Progress</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-green-600">{stats.completed}</p>
+                <p className="text-xs text-muted-foreground">Completed</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3 px-4">
+        <div className="flex-1">
+          <Select value={selectedPriority} onValueChange={setSelectedPriority}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by priority" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Priorities</SelectItem>
+              <SelectItem value="high">High Priority</SelectItem>
+              <SelectItem value="medium">Medium Priority</SelectItem>
+              <SelectItem value="low">Low Priority</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 px-4 lg:px-0">
-        <Card>
-          <CardContent className="pt-6 text-center">
-            <p className="text-2xl font-bold text-yellow-500">{tasks.length}</p>
-            <p className="text-xs text-muted-foreground">Active Tasks</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6 text-center">
-            <p className="text-2xl font-bold text-green-600">{completedTasks}</p>
-            <p className="text-xs text-muted-foreground">Completed</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="space-y-4 px-4 lg:px-0">
-        <h2 className="text-lg lg:text-xl font-heading font-semibold">Available Tasks</h2>
         
-        {tasks.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-8">
-              <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-600" />
-              <h3 className="font-medium mb-2">No active tasks!</h3>
-              <p className="text-sm text-muted-foreground">
-                All current reports have been handled.
-              </p>
-            </CardContent>
-          </Card>
+        <div className="flex-1">
+          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="new">New Tasks</SelectItem>
+              <SelectItem value="in-progress">In Progress</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Tasks List */}
+      <div className="space-y-4 px-4 pb-20 lg:pb-6">
+        {volunteerTasks.length === 0 ? (
+          <div className="text-center py-12">
+            <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-1">No tasks available</h3>
+            <p className="text-muted-foreground">Check back later for new volunteer opportunities</p>
+          </div>
         ) : (
-          tasks.map(task => (
-            <Card key={task.id} className="border-orange-200 bg-orange-50/50">
-              <CardContent className="p-4">
-                {/* Volunteer-specific report view */}
-                <div className="space-y-3">
-                  {/* Basic Task Info */}
-                  <div className="flex items-start space-x-3">
-                    {task.image && (
-                      <img 
-                        src={task.image} 
-                        alt="Task" 
-                        className="w-16 h-16 object-cover rounded-lg"
-                      />
-                    )}
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <Badge variant={
-                          task.alert_level === 'high' ? 'destructive' : 
-                          task.alert_level === 'medium' ? 'default' : 'secondary'
-                        }>
-                          {task.alert_level?.toUpperCase() || 'MEDIUM'} PRIORITY
-                        </Badge>
-                        <Badge variant="outline">
-                          Trust Score: {task.trustScore || task.trust_score || 0}%
+          volunteerTasks.map((task) => {
+            // Safety check
+            if (!task) return null;
+            
+            const isExpanded = expandedTasks[task.id];
+            
+            return (
+              <div key={task.id} className="bg-white rounded-xl border border-gray-200 shadow-sm">
+                <div className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <h3 className="font-medium text-gray-900 truncate">
+                          {task.visual_tag?.replace(/_/g, ' ') || 'Community Task'}
+                        </h3>
+                        <Badge 
+                          variant={
+                            task.alert_level === 'high' ? 'destructive' : 
+                            task.alert_level === 'medium' ? 'secondary' : 'default'
+                          }
+                        >
+                          {task.alert_level || 'medium'}
                         </Badge>
                       </div>
+                      
                       <div className="flex items-center text-sm text-muted-foreground mb-2">
-                        <MapPin className="h-4 w-4 mr-1" />
-                        <span>{task.location || task.address}</span>
+                        <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
+                        <span className="truncate">{task.address || 'Location not specified'}</span>
+                      </div>
+                      
+                      <div className="flex items-center text-xs text-muted-foreground">
+                        <span>Trust: {task.trustScore || task.trust_score || 0}%</span>
                         <span className="mx-2">•</span>
-                        <Clock className="h-4 w-4 mr-1" />
                         <span>{new Date(task.timestamp).toLocaleString()}</span>
                       </div>
-                      {task.description && (
-                        <p className="text-sm text-gray-700 mb-2">{task.description}</p>
-                      )}
                     </div>
+                    
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => setExpandedTasks(prev => ({
+                        ...prev,
+                        [task.id]: !isExpanded
+                      }))}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                   </div>
-
-                  {/* Volunteer Guidance */}
-                  {task.volunteerGuidance && (
-                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                      <h4 className="text-sm font-medium text-orange-900 mb-2">🦺 Volunteer Instructions</h4>
-                      <div className="text-sm text-orange-800 whitespace-pre-line">
-                        {task.volunteerGuidance}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Public Alert Context */}
+                  
+                  {/* Public Alert Summary */}
                   {task.publicAlert && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                      <h4 className="text-sm font-medium text-red-900 mb-2">📢 Public Alert</h4>
-                      <div className="text-sm text-red-800 whitespace-pre-line">
-                        {task.publicAlert}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                      <h4 className="text-sm font-medium text-blue-900 mb-1">📢 Community Alert</h4>
+                      <div className="text-sm text-blue-800">
+                        {cleanVisualSummary(task.publicAlert)}
                       </div>
                     </div>
                   )}
@@ -140,8 +238,8 @@ const VolunteersDashboard = () => {
                   {task.weatherSummary && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                       <h4 className="text-sm font-medium text-blue-900 mb-2">🌤️ Weather & Safety</h4>
-                      <div className="text-sm text-blue-800 whitespace-pre-line">
-                        {task.weatherSummary}
+                      <div className="text-sm text-blue-800">
+                        {cleanVisualSummary(task.weatherSummary)}
                       </div>
                     </div>
                   )}
@@ -152,8 +250,8 @@ const VolunteersDashboard = () => {
                       {task.visualSummary && (
                         <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                           <h4 className="text-sm font-medium text-gray-900 mb-2">🔍 Visual Analysis</h4>
-                          <div className="text-sm text-gray-700 whitespace-pre-line">
-                            {task.visualSummary}
+                          <div className="text-sm text-gray-700">
+                            {cleanVisualSummary(task.visualSummary)}
                           </div>
                         </div>
                       )}
@@ -161,69 +259,47 @@ const VolunteersDashboard = () => {
                       {task.authorityReport && (
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                           <h4 className="text-sm font-medium text-blue-900 mb-2">🏛️ Authority Assessment</h4>
-                          <div className="text-sm text-blue-800 whitespace-pre-line">
-                            {task.authorityReport}
+                          <div className="text-sm text-blue-800">
+                            {cleanVisualSummary(task.authorityReport)}
                           </div>
                         </div>
                       )}
                       
-                      {task.trustReasoning && (
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                          <h4 className="text-sm font-medium text-yellow-900 mb-2">⚖️ Trust Evaluation</h4>
-                          <div className="text-sm text-yellow-800 whitespace-pre-line">
-                            {task.trustReasoning}
+                      {task.volunteerGuidance && (
+                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                          <h4 className="text-sm font-medium text-purple-900 mb-2">📋 Volunteer Instructions</h4>
+                          <div className="text-sm text-purple-800 whitespace-pre-line">
+                            {cleanVisualSummary(task.volunteerGuidance)}
                           </div>
                         </div>
                       )}
+                      
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        <Button size="sm" variant="outline" className="text-blue-700 border-blue-300">
+                          <Clock className="h-4 w-4 mr-1" />
+                          Mark In Progress
+                        </Button>
+                        <Button size="sm" variant="outline" className="text-green-700 border-green-300">
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Mark Complete
+                        </Button>
+                      </div>
+                      
+                      <button 
+                        onClick={() => setExpandedTasks(prev => ({
+                          ...prev,
+                          [task.id]: false
+                        }))}
+                        className="text-sm text-blue-600 hover:text-blue-800 underline"
+                      >
+                        View Less
+                      </button>
                     </div>
                   )}
                 </div>
-
-                {/* Volunteer Actions */}
-                <div className="mt-4 pt-4 border-t bg-muted/20 -mx-4 px-4 -mb-4 pb-4">
-                  <div className="flex flex-wrap gap-2">
-                    <Button 
-                      size="sm" 
-                      className="bg-orange-600 hover:bg-orange-700"
-                    >
-                      <Users className="h-4 w-4 mr-1" />
-                      Accept Task
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                    >
-                      <MapPin className="h-4 w-4 mr-1" />
-                      Get Directions
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                    >
-                      📞 Contact Team
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => setExpandedTasks(prev => ({
-                        ...prev,
-                        [task.id]: !prev[task.id]
-                      }))}
-                    >
-                      ℹ️ {expandedTasks[task.id] ? 'Hide Details' : 'More Details'}
-                    </Button>
-                  </div>
-                  
-                  {/* Task Status */}
-                  <div className="mt-3 p-3 bg-orange-100 rounded-lg">
-                    <div className="text-xs text-orange-600 font-medium">
-                      Task Status: Available • Est. 2-4 hours
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+              </div>
+            );
+          })
         )}
       </div>
     </div>

@@ -1,317 +1,272 @@
 import React, { useState } from 'react';
-import { MapPin, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Eye, Cloud, Bot, BarChart2, FileText, MapPin, Clock } from 'lucide-react';
 
-const ProcessedReport = ({ report }) => {
+const ProcessedReport = ({ report, onLike, onShare }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  
+  const [isLiked, setIsLiked] = useState(false);
+
   // Safety check - return null if report is undefined
   if (!report) {
     return null;
   }
-  
-  const formatTimestamp = (timestamp) => {
-    return new Date(timestamp).toLocaleString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+
+  const handleLike = () => {
+    setIsLiked(!isLiked);
+    if (onLike) onLike(report.id);
   };
 
-  const getTrustIcon = (score) => {
-    if (score >= 50) {
-      return CheckCircle;
-    }
-    return AlertTriangle;
+  // Function to clean visual summary (remove asterisks and format properly)
+  const cleanVisualSummary = (summary) => {
+    if (!summary) return '';
+    
+    // Remove markdown asterisks and formatting
+    return summary
+      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove **bold**
+      .replace(/\*(.*?)\*/g, '$1')     // Remove *italic*
+      .replace(/\*/g, '')              // Remove any remaining asterisks
+      .trim();
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'processed':
-        return 'text-green-600';
-      case 'rejected':
-        return 'text-red-600';
-      case 'error':
-        return 'text-orange-600';
-      default:
-        return 'text-gray-600';
-    }
-  };
-
-  const getStatusBg = (status) => {
-    switch (status) {
-      case 'processed':
-        return 'bg-green-50 border-green-200';
-      case 'rejected':
-        return 'bg-red-50 border-red-200';
-      case 'error':
-        return 'bg-orange-50 border-orange-200';
-      default:
-        return 'bg-gray-50 border-gray-200';
-    }
-  };
-
-  const actualTrustScore = report.status === 'rejected' || report.status === 'error' ? 0 : (report.trustScore || report.trust_score || 0);
-  const TrustIcon = getTrustIcon(actualTrustScore);
+  const actualTrustScore = report.trustScore || report.trust_score || 0;
 
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden mb-6">
-      {/* Report header */}
-      <div className="p-4 border-b border-orange-100">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-              <span className="text-orange-800 font-medium">U</span>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-900">User</p>
-              <p className="text-xs text-gray-500">Community Reporter</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            {/* Pipeline Status Badge */}
-            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-              report.pipelineStatus === 'PROCESSED' ? 'bg-green-100 text-green-800' :
-              report.pipelineStatus === 'REJECTED' ? 'bg-red-100 text-red-800' :
-              report.pipelineStatus === 'ERROR' ? 'bg-orange-100 text-orange-800' :
-              'bg-gray-100 text-gray-800'
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1">
+          <div className="flex items-center space-x-2 mb-1">
+            <h3 className="font-medium text-gray-900">
+              {report.visual_tag?.replace(/_/g, ' ') || 'Water Hazard Report'}
+            </h3>
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+              report.alert_level === 'high' ? 'bg-red-100 text-red-800' :
+              report.alert_level === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+              'bg-green-100 text-green-800'
             }`}>
-              {report.pipelineStatus || report.status?.toUpperCase()}
+              {report.alert_level || 'medium'}
             </span>
-            {/* Trust Score */}
-            <div className="flex items-center">
-              {(() => {
-                const trustScore = report.status === 'rejected' || report.status === 'error' ? 0 : (report.trustScore || report.trust_score || 0);
-                return (
-                  <>
-                    <TrustIcon className={`w-5 h-5 ${trustScore >= 50 ? 'text-green-500' : 'text-red-500'}`} />
-                    <span className={`ml-1 text-sm font-medium ${trustScore >= 50 ? 'text-green-600' : 'text-red-600'}`}>
-                      {trustScore}%
-                    </span>
-                  </>
-                );
-              })()}
-            </div>
+          </div>
+          
+          <div className="flex items-center text-sm text-muted-foreground">
+            <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
+            <span className="truncate">{report.address || 'Location not specified'}</span>
           </div>
         </div>
+        
+        <div className="flex items-center space-x-2">
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+            actualTrustScore >= 71 ? 'trust-score-high' :
+            actualTrustScore >= 41 ? 'trust-score-medium' : 'trust-score-low'
+          }`}>
+            {actualTrustScore}%
+          </span>
+        </div>
       </div>
-      
+
       {/* Image */}
-      <div className="relative">
-        <img
-          src={report.image}
-          alt="Hazard report"
-          className="w-full h-64 object-cover"
-        />
+      {report.image && (
+        <div className="relative mb-3">
+          <img 
+            src={report.image} 
+            alt="Report" 
+            className="w-full h-48 object-cover rounded-lg"
+          />
+        </div>
+      )}
+
+      {/* Status and Trust Info */}
+      <div className="mb-3">
+        <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          report.status === 'processed' ? 'bg-green-100 text-green-800' :
+          report.status === 'rejected' ? 'bg-red-100 text-red-800' :
+          'bg-yellow-100 text-yellow-800'
+        }`}>
+          {report.status === 'processed' ? (
+            <>
+              <CheckCircle className="h-3 w-3 mr-1" />
+              Verified
+            </>
+          ) : report.status === 'rejected' ? (
+            <>
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              Rejected
+            </>
+          ) : (
+            <>
+              <Clock className="h-3 w-3 mr-1" />
+              Processing
+            </>
+          )}
+        </div>
+        
+        {report.status === 'rejected' && (
+          <p className="text-xs text-red-600 mt-1">
+            {report.rejectionReason || 'Report did not meet verification criteria'}
+          </p>
+        )}
+        
+        {report.status === 'error' && (
+          <p className="text-xs text-red-600 mt-1">
+            {report.errorMessage || 'Processing error occurred'}
+          </p>
+        )}
       </div>
-      
-      {/* Report details */}
-      <div className="p-4">
-        {/* Location and timestamp */}
-        <div className="flex items-center text-sm text-gray-500 mb-3">
-          <MapPin className="w-4 h-4 mr-1" />
-          <span className="truncate">{report.location || report.address}</span>
-          <span className="mx-2">•</span>
-          <Clock className="w-4 h-4 mr-1" />
-          <span>{formatTimestamp(report.timestamp)}</span>
-        </div>
-        
-        {/* Description */}
-        {report.description && (
-          <div className="mb-4">
-            <p className="text-sm text-gray-700">{report.description}</p>
-          </div>
-        )}
-        
-        {/* Pipeline Status and Analysis - Compact View */}
-        <div className={`mb-4 p-3 rounded-lg border ${getStatusBg(report.status)}`}>
-          {report.pipelineStatus === 'REJECTED' && (
-            <div>
-              <p className="text-sm text-red-800 font-medium">
-                Report Rejected: {report.rejectionReason || 'Did not meet processing criteria'}
-              </p>
-              {!isExpanded && (
-                <button 
-                  onClick={() => setIsExpanded(true)}
-                  className="text-xs text-red-600 hover:text-red-800 mt-1 underline"
-                >
-                  Read more details
-                </button>
-              )}
-              {isExpanded && (
-                <div className="mt-2 space-y-1">
-                  {report.weatherEmergencyRelated !== undefined && (
-                    <p className="text-xs text-red-600">
-                      Weather Emergency Related: {report.weatherEmergencyRelated ? 'Yes' : 'No'}
-                    </p>
-                  )}
-                  {report.screenCaptureDetected !== undefined && (
-                    <p className="text-xs text-red-600">
-                      Screen Capture Detected: {report.screenCaptureDetected ? 'Yes' : 'No'}
-                    </p>
-                  )}
-                  {report.visualSummary && (
-                    <div className="mt-2">
-                      <p className="text-sm">
-                        <span className="font-medium">Visual Analysis:</span>
-                        {' '}
-                        {report.visualSummary}
-                      </p>
-                    </div>
-                  )}
-                  <button 
-                    onClick={() => setIsExpanded(false)}
-                    className="text-xs text-red-600 hover:text-red-800 mt-2 underline"
-                  >
-                    Show less
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+
+      {/* Quick Summary */}
+      {!isExpanded && (
+        <div className="mb-3">
+          <p className="text-sm text-gray-600">
+            {report.description || 'No description provided'}
+          </p>
           
-          {report.pipelineStatus === 'ERROR' && (
-            <div>
-              <p className="text-sm text-orange-800 font-medium">
-                Processing Error: {report.errorMessage || 'Failed to process report'}
-              </p>
-            </div>
-          )}
+          {/* Trust indicator */}
+          <p className={`text-xs mt-2 ${
+            actualTrustScore >= 50 ? 'text-green-600' : 'text-red-600'
+          }`}>
+            Trust Analysis: {actualTrustScore >= 50 ? 
+              'Verified and consistent' : 
+              'Needs verification'
+            }
+          </p>
           
-          {report.pipelineStatus === 'PROCESSED' && (
-            <div>
-              <p className="text-sm text-green-800 font-medium">
-                Trust Analysis: {actualTrustScore >= 50 ? 
-                  'Verified and consistent' : 
-                  'Needs verification'
-                }
-              </p>
-              {!isExpanded && report.visualSummary && (
-                <button 
-                  onClick={() => setIsExpanded(true)}
-                  className="text-xs text-green-600 hover:text-green-800 mt-1 underline"
-                >
-                  View analysis details
-                </button>
-              )}
-              {isExpanded && (
-                <div className="mt-2 space-y-2">
-                  {report.visualSummary && (
-                    <div>
-                      <p className="text-sm">
-                        <span className="font-medium">Visual Analysis:</span>
-                        {' '}
-                        {report.visualSummary}
-                      </p>
-                    </div>
-                  )}
-                  {report.weatherSummary && (
-                    <div>
-                      <p className="text-sm">
-                        <span className="font-medium">Weather Data:</span>
-                        {' '}
-                        {report.weatherSummary}
-                      </p>
-                    </div>
-                  )}
-                  <button 
-                    onClick={() => setIsExpanded(false)}
-                    className="text-xs text-green-600 hover:text-green-800 mt-2 underline"
-                  >
-                    Show less
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-        
-        {/* Generated reports - Show all available details when expanded */}
-        {isExpanded && (
-          <div className="space-y-4 border-t pt-4">
-            {report.visualSummary && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-2">Visual Analysis</h4>
-                <div className="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded-lg">
-                  {report.visualSummary}
-                </div>
-              </div>
-            )}
-            
-            {report.weatherSummary && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-2">Weather Analysis</h4>
-                <div className="text-sm text-gray-600 whitespace-pre-line bg-blue-50 p-3 rounded-lg">
-                  {report.weatherSummary}
-                </div>
-              </div>
-            )}
-            
-            {report.trustReasoning && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-2">Trust Evaluation</h4>
-                <div className="text-sm text-gray-600 whitespace-pre-line bg-yellow-50 p-3 rounded-lg">
-                  {report.trustReasoning}
-                </div>
-              </div>
-            )}
-            
-            {report.authorityReport && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-2">Authority Report</h4>
-                <div className="text-sm text-gray-600 whitespace-pre-line bg-red-50 p-3 rounded-lg">
-                  {report.authorityReport}
-                </div>
-              </div>
-            )}
-            
-            {report.publicAlert && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-2">Public Alert</h4>
-                <div className="text-sm text-gray-600 whitespace-pre-line bg-orange-50 p-3 rounded-lg">
-                  {report.publicAlert}
-                </div>
-              </div>
-            )}
-            
-            {report.volunteerGuidance && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-2">Volunteer Guidance</h4>
-                <div className="text-sm text-gray-600 whitespace-pre-line bg-green-50 p-3 rounded-lg">
-                  {report.volunteerGuidance}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-        
-        {/* Action buttons */}
-        <div className="flex items-center justify-between pt-3 border-t">
-          <div className="flex items-center space-x-4">
-            <button className="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors">
-              <span className="text-sm">👍</span>
-              <span className="text-xs">{report.likes || 0}</span>
-            </button>
-            <button className="flex items-center space-x-1 text-gray-500 hover:text-green-600 transition-colors">
-              <span className="text-sm">💬</span>
-              <span className="text-xs">{report.comments || 0}</span>
-            </button>
-            <button className="flex items-center space-x-1 text-gray-500 hover:text-purple-600 transition-colors">
-              <span className="text-sm">📤</span>
-              <span className="text-xs">Share</span>
-            </button>
-          </div>
-          
-          {!isExpanded && (report.authorityReport || report.publicAlert || report.volunteerGuidance) && (
+          {!isExpanded && report.visualSummary && (
             <button 
               onClick={() => setIsExpanded(true)}
-              className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+              className="text-xs text-green-600 hover:text-green-800 mt-1 underline"
             >
-              View full report →
+              View analysis details
             </button>
           )}
         </div>
+      )}
+      
+      {isExpanded && (
+        <div className="mt-2 space-y-1">
+          {report.weatherEmergencyRelated !== undefined && (
+            <p className="text-xs text-red-600">
+              Weather Emergency Related: {report.weatherEmergencyRelated ? 'Yes' : 'No'}
+            </p>
+          )}
+          {report.screenCaptureDetected !== undefined && (
+            <p className="text-xs text-red-600">
+              Screen Capture Detected: {report.screenCaptureDetected ? 'Yes' : 'No'}
+            </p>
+          )}
+          {report.visualSummary && (
+            <div className="mt-2">
+              <p className="text-sm">
+                <span className="font-medium">Visual Analysis:</span>
+                {' '}
+                {cleanVisualSummary(report.visualSummary)}
+              </p>
+            </div>
+          )}
+          <button 
+            onClick={() => setIsExpanded(false)}
+            className="text-xs text-green-600 hover:text-green-800 mt-2 underline"
+          >
+            Show less
+          </button>
+        </div>
+      )}
+
+      {/* Generated reports - Show all available details when expanded */}
+      {isExpanded && (
+        <div className="space-y-4 border-t pt-4">
+          {report.visualSummary && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-900 mb-2">Visual Analysis</h4>
+              <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                {cleanVisualSummary(report.visualSummary)}
+              </div>
+            </div>
+          )}
+          
+          {report.weatherSummary && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-900 mb-2">Weather Analysis</h4>
+              <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
+                {cleanVisualSummary(report.weatherSummary)}
+              </div>
+            </div>
+          )}
+          
+          {report.trustReasoning && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-900 mb-2">Trust Evaluation</h4>
+              <div className="text-sm text-gray-600 bg-yellow-50 p-3 rounded-lg">
+                {cleanVisualSummary(report.trustReasoning)}
+              </div>
+            </div>
+          )}
+          
+          {report.authorityReport && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-900 mb-2">Authority Report</h4>
+              <div className="text-sm text-gray-600 bg-red-50 p-3 rounded-lg">
+                {cleanVisualSummary(report.authorityReport)}
+              </div>
+            </div>
+          )}
+          
+          {report.publicAlert && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-900 mb-2">Public Alert</h4>
+              <div className="text-sm text-gray-600 bg-green-50 p-3 rounded-lg">
+                {cleanVisualSummary(report.publicAlert)}
+              </div>
+            </div>
+          )}
+          
+          {report.volunteerGuidance && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-900 mb-2">Volunteer Guidance</h4>
+              <div className="text-sm text-gray-600 bg-purple-50 p-3 rounded-lg">
+                {cleanVisualSummary(report.volunteerGuidance)}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* Actions */}
+      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+        <div className="flex items-center space-x-4">
+          <button 
+            onClick={handleLike}
+            className={`flex items-center space-x-1 text-sm ${
+              isLiked ? 'text-red-500' : 'text-gray-500 hover:text-red-500'
+            }`}
+          >
+            <div className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`}>
+              <svg viewBox="0 0 24 24" className="w-full h-full">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+            </div>
+            <span>{(report.likes || 0) + (isLiked ? 1 : 0)}</span>
+          </button>
+          
+          <button className="flex items-center space-x-1 text-sm text-gray-500 hover:text-blue-500">
+            <div className="w-5 h-5">
+              <svg viewBox="0 0 24 24" className="w-full h-full">
+                <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+              </svg>
+            </div>
+            <span>{report.comments || 0}</span>
+          </button>
+        </div>
+        
+        <button 
+          onClick={onShare}
+          className="flex items-center space-x-1 text-sm text-gray-500 hover:text-green-500"
+        >
+          <div className="w-5 h-5">
+            <svg viewBox="0 0 24 24" className="w-full h-full">
+              <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+            </svg>
+          </div>
+          <span>Share</span>
+        </button>
       </div>
     </div>
   );
