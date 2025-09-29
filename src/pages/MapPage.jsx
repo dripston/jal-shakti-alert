@@ -25,6 +25,10 @@ const MapPage = () => {
   // Filter out rejected reports for consistency with dashboards
   const reports = allReports.filter(report => report.status !== 'rejected');
   
+  console.log('All reports:', allReports.length);
+  console.log('Filtered reports for map:', reports.length);
+  console.log('Sample report:', reports[0]);
+  
   const [selectedReport, setSelectedReport] = useState(null);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [showAlertZones, setShowAlertZones] = useState(true);
@@ -99,6 +103,12 @@ const MapPage = () => {
     zoomOutButton.addTo(map);
 
     mapInstanceRef.current = map;
+    
+    // Add a test marker to verify map is working
+    const testMarker = L.marker([13.0827, 80.2707])
+      .addTo(map)
+      .bindPopup('Test marker - Map is working!');
+    console.log('Test marker added to map');
   };
 
   const updateMapMarkers = () => {
@@ -110,11 +120,18 @@ const MapPage = () => {
     markersRef.current = [];
 
     // Add markers for each report
+    console.log('Total reports for map:', reports.length);
     reports.forEach(report => {
       // Skip if report doesn't have valid coordinates
       const lat = report.coords?.latitude || report.latitude;
       const lng = report.coords?.longitude || report.longitude;
-      if (!lat || !lng) return;
+      console.log('Report coordinates:', { id: report.id, lat, lng, coords: report.coords });
+      if (!lat || !lng) {
+        console.log('Skipping report due to missing coordinates:', report.id);
+        return;
+      }
+      
+      console.log('Adding marker for report:', report.id, 'at', lat, lng);
       
       const markerColor = getMarkerColor(report.trustScore || report.trust_score, report.alert_level);
       

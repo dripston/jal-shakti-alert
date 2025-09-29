@@ -35,7 +35,13 @@ const ProfilePage = () => {
     location: user?.location || ''
   });
 
-  const userReports = allReports.filter(report => report.userId === user?.id) || [];
+  const userReports = allReports.filter(report => 
+    report.userId === user?.id || report.user_id === user?.id
+  ) || [];
+  
+  console.log('User ID:', user?.id);
+  console.log('All reports:', allReports.length);
+  console.log('User reports:', userReports.length);
   
   const handleSave = async () => {
     setIsSaving(true);
@@ -69,7 +75,7 @@ const ProfilePage = () => {
   if (!user) return null;
 
   return (
-    <div className="container-mobile py-6 space-y-6">
+    <div className="py-6 lg:py-0 space-y-6 px-4 lg:px-0">
       {/* Profile Header */}
       <Card>
         <CardContent className="pt-6">

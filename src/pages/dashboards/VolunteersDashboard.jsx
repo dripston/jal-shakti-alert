@@ -9,11 +9,11 @@ const VolunteersDashboard = () => {
   const { allReports } = useReports();
   const [expandedTasks, setExpandedTasks] = React.useState({});
   
-  // Show processed reports as potential tasks for volunteers (exclude rejected and errors)
+  // Show processed reports as volunteer tasks - different from authorities
   const tasks = allReports.filter(r => 
-    r.status !== 'rejected' && 
-    r.status !== 'error' &&
-    (r.trustScore || r.trust_score || 0) >= 30 // Lower threshold for volunteers
+    r.status === 'processed' && 
+    (r.trustScore || r.trust_score || 0) >= 50 && // Higher threshold for volunteer tasks
+    r.volunteerGuidance // Only show if there's volunteer guidance available
   ).slice(0, 10);
   const completedTasks = Math.floor(tasks.length * 0.6);
 

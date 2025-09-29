@@ -31,27 +31,27 @@ const SocialPost = ({ report }) => {
     return cleaned;
   };
 
-  // Create a user-friendly summary based on actual pipeline data
-  const getUserFriendlySummary = () => {
+  // Create a professional news-style summary
+  const getNewsSummary = () => {
     if (report.status === 'rejected') {
-      return "This report didn't meet our verification criteria. Thanks for staying vigilant! 🛡️";
+      return "Report verification unsuccessful. Authorities continue monitoring the area.";
     }
     
     if (report.status === 'error') {
-      return "We're having trouble processing this report. Our team is looking into it. ⚠️";
+      return "Technical analysis pending. Local authorities have been notified for manual review.";
     }
 
     // For processed reports, use actual trust score from pipeline
     const trustScore = report.trustScore || report.trust_score || 0;
     
     if (trustScore >= 70) {
-      return "✅ High confidence report - Authorities have been notified and are responding.";
+      return "High-confidence environmental incident confirmed. Emergency response teams have been dispatched to the location.";
     } else if (trustScore >= 50) {
-      return "⚠️ Moderate confidence - Report under review by local authorities.";
+      return "Moderate-confidence environmental concern reported. Local authorities are conducting further investigation.";
     } else if (trustScore > 0) {
-      return "🔍 Low confidence - This report needs additional verification.";
+      return "Environmental report under verification. Authorities are cross-referencing with additional data sources.";
     } else {
-      return "❌ Report could not be verified - Thank you for your vigilance.";
+      return "Initial report assessment complete. Monitoring systems remain active in the area.";
     }
   };
 
@@ -100,10 +100,13 @@ const SocialPost = ({ report }) => {
           </p>
         )}
         
-        {/* Status Summary */}
-        <div className="bg-gray-50 rounded-lg p-3 lg:p-4 mb-3">
-          <p className="text-sm lg:text-base text-gray-700 font-medium">
-            {getUserFriendlySummary()}
+        {/* News Summary */}
+        <div className="bg-blue-50 border-l-4 border-blue-500 rounded-r-lg p-3 lg:p-4 mb-3">
+          <div className="flex items-start space-x-2">
+            <div className="text-blue-600 font-semibold text-xs lg:text-sm">BREAKING</div>
+          </div>
+          <p className="text-sm lg:text-base text-gray-800 font-medium mt-1 leading-relaxed">
+            {getNewsSummary()}
           </p>
         </div>
       </div>

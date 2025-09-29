@@ -10,7 +10,7 @@ const UsersDashboard = () => {
   const { allReports } = useReports();
   const { user } = useAuth();
   
-  const userReports = allReports.filter(r => r.userId === user?.id) || [];
+  const userReports = allReports.filter(r => r.userId === user?.id || r.user_id === user?.id) || [];
   const totalLikes = userReports.reduce((sum, r) => sum + (r.likes || 0), 0);
 
   return (
@@ -58,7 +58,11 @@ const UsersDashboard = () => {
         </Card>
         <Card>
           <CardContent className="pt-6 text-center">
-            <p className="text-2xl font-bold text-green-600">{user?.trust_rating || 0}%</p>
+            <p className="text-2xl font-bold text-green-600">
+              {userReports.length > 0 
+                ? Math.round(userReports.reduce((sum, r) => sum + (r.trustScore || r.trust_score || 0), 0) / userReports.length)
+                : 0}%
+            </p>
             <p className="text-xs text-muted-foreground">Trust</p>
           </CardContent>
         </Card>

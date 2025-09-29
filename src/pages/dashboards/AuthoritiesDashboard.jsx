@@ -25,12 +25,17 @@ const AuthoritiesDashboard = () => {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [expandedReports, setExpandedReports] = useState({});
 
-  // Filter reports based on selections - exclude rejected reports
+  // Filter reports for authorities - show processed reports that need review/action
   const filteredReports = allReports.filter(report => {
-    // Never show rejected reports in authorities dashboard
-    if (report.status === 'rejected') return false;
+    // Only show processed reports with sufficient trust score for authorities
+    if (report.status !== 'processed') return false;
+    if ((report.trustScore || report.trust_score || 0) < 30) return false; // Minimum threshold
     if (selectedPriority !== 'all' && report.alert_level !== selectedPriority) return false;
-    if (selectedStatus !== 'all' && report.status !== selectedStatus) return false;
+    if (selectedStatus !== 'all') {
+      // Map status for authorities view
+      const authStatus = (report.trustScore || report.trust_score || 0) >= 70 ? 'approved' : 'pending';
+      if (authStatus !== selectedStatus) return false;
+    }
     return true;
   });
 
@@ -270,8 +275,29 @@ const AuthoritiesDashboard = () => {
                     </div>
                   </div>
 
-                  {/* Authority Report Content */}
-                  {report.authorityReport && (() => {
+                  {/* Authority Report Content - Collapsed by Default */}
+                  {report.authorityReport && !expandedReports[report.id] && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-sm font-medium text-blue-900">Authority Assessment</h4>
+                        <button 
+                          onClick={() => setExpandedReports(prev => ({
+                            ...prev,
+                            [report.id]: true
+                          }))}
+                          className="text-xs text-blue-600 hover:text-blue-800 underline"
+                        >
+                          View full report
+                        </button>
+                      </div>
+                      <div className="text-sm text-blue-800">
+                        {report.authorityReport.split('\n').slice(0, 2).join('\n')}...
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Full Authority Report Content */}
+                  {report.authorityReport && expandedReports[report.id] && (() => {
                     const getAuthorityName = (location) => {
                       const cityAuthorities = {
                         'Chennai': 'M.K. Stalin (Chief Minister)',
