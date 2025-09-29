@@ -304,7 +304,7 @@ export const ReportsProvider = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [queuedReports, reports, addNotification, startProgressSimulation]);
+  }, [queuedReports, reports, addNotification]);
 
   // Real-time progress updates only for legitimate API processing
   // Progress simulation removed - only real API responses update status
