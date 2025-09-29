@@ -565,7 +565,7 @@ export const ReportsProvider = ({ children }) => {
       }
       return errorReport;
     }
-  }, [user, isOnline, addNotification, startProgressSimulation, stopProgressSimulation]);
+  }, [user, isOnline, addNotification]);
 
 
 
