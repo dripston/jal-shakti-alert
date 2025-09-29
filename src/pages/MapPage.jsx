@@ -20,7 +20,10 @@ const MapPage = () => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
-  const { reports } = useReports();
+  const { allReports } = useReports();
+  
+  // Filter out rejected reports for consistency with dashboards
+  const reports = allReports.filter(report => report.status !== 'rejected');
   
   const [selectedReport, setSelectedReport] = useState(null);
   const [showHeatmap, setShowHeatmap] = useState(false);
@@ -51,9 +54,9 @@ const MapPage = () => {
   }, [reports, showHeatmap, showAlertZones]);
 
   useEffect(() => {
-    if (selectedReport && mapInstanceRef.current) {
+    if (selectedReport && mapInstanceRef.current && selectedReport.latitude && selectedReport.longitude) {
       // Fly to selected report
-      mapInstanceRef.current.flyTo([selectedReport.coords.lat, selectedReport.coords.lng], 15, {
+      mapInstanceRef.current.flyTo([selectedReport.latitude, selectedReport.longitude], 15, {
         animate: true,
         duration: 1.5
       });
@@ -104,6 +107,9 @@ const MapPage = () => {
 
     // Add markers for each report
     reports.forEach(report => {
+      // Skip if report doesn't have valid coordinates
+      if (!report.latitude || !report.longitude) return;
+      
       const markerColor = getMarkerColor(report.trust_score, report.alert_level);
       
       // Create custom icon based on trust score and alert level
@@ -126,21 +132,21 @@ const MapPage = () => {
         iconAnchor: [10, 10]
       });
 
-      const marker = L.marker([report.coords.lat, report.coords.lng], { icon })
+      const marker = L.marker([report.latitude, report.longitude], { icon })
         .addTo(map)
         .on('click', () => setSelectedReport(report));
 
       // Add popup with basic info
       const popupContent = `
         <div style="min-width: 200px;">
-          <div style="font-weight: bold; margin-bottom: 5px;">${report.visual_tag.replace('_', ' ').toUpperCase()}</div>
-          <div style="font-size: 12px; color: #666; margin-bottom: 5px;">${report.address}</div>
+          <div style="font-weight: bold; margin-bottom: 5px;">${report.visual_tag?.replace('_', ' ').toUpperCase() || 'Ocean Hazard'}</div>
+          <div style="font-size: 12px; color: #666; margin-bottom: 5px;">${report.address || 'Location not specified'}</div>
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div style="background: ${markerColor}; color: white; padding: 2px 6px; border-radius: 10px; font-size: 11px;">
-              Trust: ${report.trust_score}%
+              Trust: ${report.trust_score || 50}%
             </div>
             <div style="font-size: 11px; color: #666;">
-              ${new Date(report.timestamp).toLocaleDateString()}
+              ${new Date(report.timestamp || report.created_at).toLocaleDateString()}
             </div>
           </div>
         </div>
@@ -278,9 +284,9 @@ const MapPage = () => {
               </div>
               <div>
                 <div className="text-lg font-bold text-green-600">
-                  {reports.filter(r => r.status === 'verified').length}
+                  {reports.filter(r => r.status === 'approved').length}
                 </div>
-                <div className="text-xs text-muted-foreground">Verified</div>
+                <div className="text-xs text-muted-foreground">Approved</div>
               </div>
             </div>
           </CardContent>

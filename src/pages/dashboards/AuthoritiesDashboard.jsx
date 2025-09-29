@@ -44,14 +44,15 @@ const AuthoritiesDashboard = () => {
     return new Date(b.timestamp) - new Date(a.timestamp);
   });
 
-  // Statistics
-  const highPriorityReports = allReports.filter(r => r.alert_level === 'high').length;
-  const pendingVerification = allReports.filter(r => r.status === 'queued').length;
-  const verifiedToday = allReports.filter(r => {
+  // Statistics (exclude rejected reports)
+  const nonRejectedReports = allReports.filter(r => r.status !== 'rejected');
+  const highPriorityReports = nonRejectedReports.filter(r => r.alert_level === 'high').length;
+  const pendingVerification = nonRejectedReports.filter(r => r.status === 'pending').length;
+  const approvedToday = nonRejectedReports.filter(r => {
     const today = new Date().toDateString();
-    return r.status === 'verified' && new Date(r.timestamp).toDateString() === today;
+    return r.status === 'approved' && new Date(r.timestamp || r.created_at).toDateString() === today;
   }).length;
-  const totalVerified = allReports.filter(r => r.status === 'verified').length;
+  const totalApproved = nonRejectedReports.filter(r => r.status === 'approved').length;
 
   const handleVerifyReport = (reportId) => {
     // In real app, this would make API call to verify report
@@ -145,8 +146,8 @@ const AuthoritiesDashboard = () => {
             <div className="flex items-center space-x-2">
               <CheckCircle className="h-5 w-5 lg:h-6 lg:w-6 text-green-600" />
               <div>
-                <p className="text-xl lg:text-2xl font-bold text-green-600">{verifiedToday}</p>
-                <p className="text-xs lg:text-sm text-green-600">Verified Today</p>
+                <p className="text-xl lg:text-2xl font-bold text-green-600">{approvedToday}</p>
+                <p className="text-xs lg:text-sm text-green-600">Approved Today</p>
               </div>
             </div>
           </CardContent>
@@ -157,8 +158,8 @@ const AuthoritiesDashboard = () => {
             <div className="flex items-center space-x-2">
               <FileText className="h-5 w-5 lg:h-6 lg:w-6 text-blue-600" />
               <div>
-                <p className="text-xl lg:text-2xl font-bold text-blue-600">{totalVerified}</p>
-                <p className="text-xs lg:text-sm text-blue-600">Total Verified</p>
+                <p className="text-xl lg:text-2xl font-bold text-blue-600">{totalApproved}</p>
+                <p className="text-xs lg:text-sm text-blue-600">Total Approved</p>
               </div>
             </div>
           </CardContent>
@@ -345,7 +346,7 @@ const AuthoritiesDashboard = () => {
                 {/* Authority Actions */}
                 <div className="mt-4 pt-4 border-t bg-muted/20 -mx-4 px-4 -mb-4 pb-4">
                   <div className="flex flex-wrap gap-2">
-                    {report.status === 'queued' && (
+                    {report.status === 'pending' && (
                       <>
                         <Button 
                           size="sm" 
@@ -353,7 +354,7 @@ const AuthoritiesDashboard = () => {
                           onClick={() => handleVerifyReport(report.id)}
                         >
                           <CheckCircle className="h-4 w-4 mr-1" />
-                          Verify Report
+                          Approve Report
                         </Button>
                         <Button 
                           size="sm" 
@@ -392,17 +393,13 @@ const AuthoritiesDashboard = () => {
                     </Button>
                   </div>
                   
-                  {/* Authority Notes */}
+                  {/* Quick Summary */}
                   <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                    <div className="text-xs text-blue-600 font-medium mb-1">
-                      Authority Assessment
-                    </div>
-                    <div className="space-y-1 text-xs text-blue-700">
-                      <div>AI Analysis: {report.agents?.visual_summary}</div>
-                      <div>Weather Context: {report.agents?.weather_check?.status}</div>
-                      <div>Risk Level: {(report.alert_level || 'medium').toUpperCase()}</div>
-                      {report.status === 'verified' && (
-                        <div className="text-green-700 font-medium">✓ Verified by authorities</div>
+                    <div className="text-xs text-blue-600 font-medium mb-1">Status Summary</div>
+                    <div className="text-xs text-blue-700">
+                      Risk Level: {(report.alert_level || 'medium').toUpperCase()}
+                      {report.status === 'approved' && (
+                        <span className="text-green-700 font-medium ml-2">• ✓ Approved</span>
                       )}
                     </div>
                   </div>

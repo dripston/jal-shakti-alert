@@ -157,14 +157,8 @@ const VolunteersDashboard = () => {
                   
                   {/* Task Status */}
                   <div className="mt-3 p-3 bg-orange-100 rounded-lg">
-                    <div className="text-xs text-orange-600 font-medium mb-1">
-                      Task Status: Available
-                    </div>
-                    <div className="space-y-1 text-xs text-orange-700">
-                      <div>Estimated Duration: 2-4 hours</div>
-                      <div>Required Skills: Basic rescue, First aid</div>
-                      <div>Team Size: 3-5 volunteers recommended</div>
-                      <div>Equipment: Provided on-site</div>
+                    <div className="text-xs text-orange-600 font-medium">
+                      Task Status: Available • Est. 2-4 hours
                     </div>
                   </div>
                 </div>
