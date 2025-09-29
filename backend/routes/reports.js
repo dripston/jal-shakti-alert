@@ -2,6 +2,8 @@ const express = require('express');
 const multer = require('multer');
 const FormData = require('form-data');
 const fetch = require('node-fetch');
+const { db } = require('../config/database');
+const { v4: uuidv4 } = require('uuid');
 const router = express.Router();
 
 // Configure multer for handling multipart form uploads
@@ -105,14 +107,25 @@ router.post('/process', upload.single('image'), async (req, res) => {
   }
 });
 
-// In-memory storage for reports (in production, use a real database)
-let reportsDatabase = [];
-
 // Get all reports
 router.get('/', async (req, res) => {
   try {
-    // Return all stored reports
-    res.json(reportsDatabase);
+    db.all(
+      'SELECT * FROM reports ORDER BY created_at DESC LIMIT 100',
+      [],
+      (err, rows) => {
+        if (err) {
+          console.error('Database error:', err);
+          return res.status(500).json({ 
+            error: 'Failed to fetch reports',
+            message: process.env.NODE_ENV === 'development' ? err.message : 'Database error'
+          });
+        }
+        
+        console.log(`Fetched ${rows.length} reports from database`);
+        res.json(rows || []);
+      }
+    );
   } catch (error) {
     console.error('Error fetching reports:', error);
     res.status(500).json({ 
@@ -127,29 +140,59 @@ router.post('/save', async (req, res) => {
   try {
     const report = req.body;
     
-    // Add timestamp and ID if not present
+    // Add ID if not present
     if (!report.id) {
       report.id = `r_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     }
-    if (!report.timestamp) {
-      report.timestamp = new Date().toISOString();
-    }
     
-    // Store in database
-    reportsDatabase.unshift(report); // Add to beginning of array
+    // Extract fields for database insertion
+    const {
+      id, 
+      user_id = 'anonymous',
+      image_url = null,
+      image_data = null,
+      latitude = null,
+      longitude = null,
+      accuracy = null,
+      address = null,
+      description = report.description || '',
+      visual_tag = report.visual_tag || null,
+      alert_level = report.alert_level || 'medium',
+      trust_score = report.trust_score || 50,
+      status = 'pending',
+      agents_analysis = JSON.stringify(report.agents_analysis || {})
+    } = report;
     
-    // Keep only last 100 reports to prevent memory issues
-    if (reportsDatabase.length > 100) {
-      reportsDatabase = reportsDatabase.slice(0, 100);
-    }
-    
-    console.log(`Saved report ${report.id} to database. Total reports: ${reportsDatabase.length}`);
-    
-    res.json({ 
-      success: true, 
-      reportId: report.id,
-      totalReports: reportsDatabase.length 
-    });
+    // Insert into database
+    db.run(
+      `INSERT INTO reports (
+        id, user_id, image_url, image_data, latitude, longitude, 
+        accuracy, address, description, visual_tag, alert_level, 
+        trust_score, status, agents_analysis
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id, user_id, image_url, image_data, latitude, longitude,
+        accuracy, address, description, visual_tag, alert_level,
+        trust_score, status, agents_analysis
+      ],
+      function(err) {
+        if (err) {
+          console.error('Database error saving report:', err);
+          return res.status(500).json({ 
+            error: 'Failed to save report',
+            message: process.env.NODE_ENV === 'development' ? err.message : 'Database error'
+          });
+        }
+        
+        console.log(`Saved report ${id} to database`);
+        
+        res.json({ 
+          success: true, 
+          reportId: id,
+          message: 'Report saved successfully'
+        });
+      }
+    );
   } catch (error) {
     console.error('Error saving report:', error);
     res.status(500).json({ 
