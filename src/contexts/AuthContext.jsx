@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
 
   const loadUserFromStorage = async () => {
     try {
-      const storedUser = await localforage.getItem('oceanwatch_user');
+      const storedUser = await localforage.getItem('pragyan_chakra_user');
       if (storedUser) {
         setUser(storedUser);
         setIsAuthenticated(true);
@@ -45,9 +45,9 @@ export const AuthProvider = ({ children }) => {
             id: 'u1',
             name: 'Asha R.',
             email: credentials.email,
-            handle: 'asha_coast',
+            handle: 'asha_water',
             avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=faces',
-            bio: 'Fisherfolk·Citizen Scientist·Coastal Watch',
+            bio: 'Water Guardian·Citizen Scientist·Community Watch',
             trust_rating: 78,
             location: 'Chennai, India',
             reports_count: 23,
@@ -56,7 +56,7 @@ export const AuthProvider = ({ children }) => {
           };
 
           try {
-            await localforage.setItem('oceanwatch_user', mockUser);
+            await localforage.setItem('pragyan_chakra_user', mockUser);
             setUser(mockUser);
             setIsAuthenticated(true);
             resolve(mockUser);
@@ -80,7 +80,7 @@ export const AuthProvider = ({ children }) => {
           email: userData.email,
           handle: userData.handle || userData.email.split('@')[0],
           avatar: `https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=faces`,
-          bio: userData.bio || 'Ocean guardian and environmental advocate',
+          bio: userData.bio || 'Water guardian and environmental advocate',
           trust_rating: 50, // New users start with moderate trust
           location: userData.location || 'India',
           reports_count: 0,
@@ -89,7 +89,7 @@ export const AuthProvider = ({ children }) => {
         };
 
         try {
-          await localforage.setItem('oceanwatch_user', newUser);
+          await localforage.setItem('pragyan_chakra_user', newUser);
           setUser(newUser);
           setIsAuthenticated(true);
           resolve(newUser);
@@ -102,7 +102,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await localforage.removeItem('oceanwatch_user');
+      await localforage.removeItem('pragyan_chakra_user');
       setUser(null);
       setIsAuthenticated(false);
     } catch (error) {
@@ -116,7 +116,7 @@ export const AuthProvider = ({ children }) => {
     const updatedUser = { ...user, ...updates };
     
     try {
-      await localforage.setItem('oceanwatch_user', updatedUser);
+      await localforage.setItem('pragyan_chakra_user', updatedUser);
       setUser(updatedUser);
       return updatedUser;
     } catch (error) {

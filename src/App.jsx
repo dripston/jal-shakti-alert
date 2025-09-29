@@ -131,7 +131,9 @@ const AuthenticatedApp = () => {
   return (
     <NotificationProvider>
       <ReportsProvider>
-        <AppLayout />
+        <Routes>
+          <Route path="/*" element={<AppLayout />} />
+        </Routes>
       </ReportsProvider>
     </NotificationProvider>
   );
