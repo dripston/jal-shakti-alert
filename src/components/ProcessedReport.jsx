@@ -4,6 +4,11 @@ import { MapPin, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
 const ProcessedReport = ({ report }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   
+  // Safety check - return null if report is undefined
+  if (!report) {
+    return null;
+  }
+  
   const formatTimestamp = (timestamp) => {
     return new Date(timestamp).toLocaleString('en-IN', {
       day: 'numeric',

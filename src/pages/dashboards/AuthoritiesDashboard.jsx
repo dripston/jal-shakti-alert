@@ -27,6 +27,8 @@ const AuthoritiesDashboard = () => {
 
   // Filter reports for authorities - show processed reports that need review/action
   const filteredReports = allReports.filter(report => {
+    // Safety check - skip if report is undefined
+    if (!report) return false;
     // Only show processed reports with sufficient trust score for authorities
     if (report.status !== 'processed') return false;
     if ((report.trustScore || report.trust_score || 0) < 30) return false; // Minimum threshold
@@ -50,7 +52,7 @@ const AuthoritiesDashboard = () => {
   });
 
   // Statistics (exclude rejected reports)
-  const nonRejectedReports = allReports.filter(r => r.status !== 'rejected');
+  const nonRejectedReports = allReports.filter(r => r && r.status !== 'rejected');
   const highPriorityReports = nonRejectedReports.filter(r => r.alert_level === 'high').length;
   const pendingVerification = nonRejectedReports.filter(r => r.status === 'pending' || r.status === 'processing').length;
   const approvedToday = nonRejectedReports.filter(r => {

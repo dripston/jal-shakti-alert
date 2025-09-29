@@ -10,6 +10,11 @@ import { formatDistanceToNow } from 'date-fns';
 const PostCard = ({ report, onViewOnMap, compact = false }) => {
   const { user } = useAuth();
   const { likeReport } = useReports();
+  
+  // Safety check - return null if report is undefined
+  if (!report) {
+    return null;
+  }
 
   const getTrustScoreColor = (score) => {
     if (score >= 71) return 'trust-score-high';

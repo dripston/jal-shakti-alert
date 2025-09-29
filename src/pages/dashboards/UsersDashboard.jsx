@@ -10,7 +10,7 @@ const UsersDashboard = () => {
   const { allReports } = useReports();
   const { user } = useAuth();
   
-  const userReports = allReports.filter(r => r.userId === user?.id || r.user_id === user?.id) || [];
+  const userReports = allReports.filter(r => r && (r.userId === user?.id || r.user_id === user?.id)) || [];
   const totalLikes = userReports.reduce((sum, r) => sum + (r.likes || 0), 0);
 
   return (

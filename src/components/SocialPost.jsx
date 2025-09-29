@@ -5,6 +5,11 @@ const SocialPost = ({ report }) => {
   const [isLiked, setIsLiked] = useState(false);
   const [showComments, setShowComments] = useState(false);
   
+  // Safety check - return null if report is undefined
+  if (!report) {
+    return null;
+  }
+  
   const formatTimestamp = (timestamp) => {
     const now = new Date();
     const reportTime = new Date(timestamp);

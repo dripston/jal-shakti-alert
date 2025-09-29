@@ -11,6 +11,7 @@ const VolunteersDashboard = () => {
   
   // Show processed reports as volunteer tasks - different from authorities
   const tasks = allReports.filter(r => 
+    r && // Safety check
     r.status === 'processed' && 
     (r.trustScore || r.trust_score || 0) >= 50 && // Higher threshold for volunteer tasks
     r.volunteerGuidance // Only show if there's volunteer guidance available

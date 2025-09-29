@@ -16,9 +16,9 @@ const FeedPage = () => {
   };
 
   // Separate pending and completed reports (processed, rejected, error)
-  const pendingReports = reports.filter(report => report.status === 'pending');
+  const pendingReports = reports.filter(report => report && report.status === 'pending');
   const completedReports = reports.filter(report => 
-    report.status === 'processed' || report.status === 'rejected' || report.status === 'error'
+    report && (report.status === 'processed' || report.status === 'rejected' || report.status === 'error')
   );
 
   return (

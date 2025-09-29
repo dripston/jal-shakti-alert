@@ -23,7 +23,7 @@ const MapPage = () => {
   const { allReports } = useReports();
   
   // Filter out rejected reports for consistency with dashboards
-  const reports = allReports.filter(report => report.status !== 'rejected');
+  const reports = allReports.filter(report => report && report.status !== 'rejected');
   
   console.log('All reports:', allReports.length);
   console.log('Filtered reports for map:', reports.length);
