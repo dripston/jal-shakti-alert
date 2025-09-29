@@ -12,6 +12,7 @@ import { useToast } from '../hooks/use-toast';
 const ReportFormModal = ({ isOpen, onClose }) => {
   const [step, setStep] = useState(1); // 1: Image, 2: Description, 3: Location (if needed), 4: Review
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0); // For fake progress simulation
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [formData, setFormData] = useState({
@@ -29,6 +30,7 @@ const ReportFormModal = ({ isOpen, onClose }) => {
   const videoRef = useRef();
   const canvasRef = useRef();
   const streamRef = useRef();
+  const progressIntervalRef = useRef(null);
 
   const visualTags = [
     { value: 'oil_slick', label: 'Oil Slick' },
@@ -315,8 +317,34 @@ const ReportFormModal = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleSubmit = async () => {
+  // Function to simulate upload progress
+  const simulateUploadProgress = () => {
+    setUploadProgress(0);
     setIsSubmitting(true);
+    
+    // Clear any existing interval
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+    }
+    
+    // Simulate progress with increasing intervals
+    let progress = 0;
+    progressIntervalRef.current = setInterval(() => {
+      // Increase progress by a random amount between 5-15%
+      const increment = Math.floor(Math.random() * 11) + 5;
+      progress = Math.min(progress + increment, 95); // Cap at 95% until actual submission completes
+      setUploadProgress(progress);
+      
+      // If we reach 95%, stop the simulation and let the actual submission complete
+      if (progress >= 95) {
+        clearInterval(progressIntervalRef.current);
+      }
+    }, 200); // Update every 200ms
+  };
+
+  const handleSubmit = async () => {
+    // Start the fake progress simulation
+    simulateUploadProgress();
 
     try {
       const reportData = {
@@ -336,23 +364,39 @@ const ReportFormModal = ({ isOpen, onClose }) => {
       onClose();
 
       // Submit report (this will handle online/offline scenarios)
-      await createReport(reportData);
+      const result = await createReport(reportData);
+
+      // Stop the progress simulation and set to 100%
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+      setUploadProgress(100);
 
       // Show success message
       toast({
         title: "Report submitted!",
-        description: "Your report is being processed. Check the feed for progress updates.",
+        description: "Your report has been successfully processed.",
       });
 
     } catch (error) {
       console.error('Report submission error:', error);
+      
+      // Stop the progress simulation
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+      
       toast({
         title: "Report queued",
         description: "Your report has been saved and will be submitted when you're back online.",
         variant: "default"
       });
     } finally {
-      setIsSubmitting(false);
+      // Reset submitting state after a short delay to ensure progress bar is visible
+      setTimeout(() => {
+        setIsSubmitting(false);
+        setUploadProgress(0);
+      }, 1000);
     }
   };
 
@@ -368,6 +412,12 @@ const ReportFormModal = ({ isOpen, onClose }) => {
   const resetForm = () => {
     setStep(1);
     stopCamera();
+    
+    // Clear any ongoing progress simulation
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+    }
+    
     setFormData({
       image: null,
       imagePreview: null,
@@ -376,12 +426,19 @@ const ReportFormModal = ({ isOpen, onClose }) => {
       address: '',
       timestamp: null
     });
+    setIsSubmitting(false);
+    setUploadProgress(0);
   };
 
-  // Cleanup camera when modal closes
+  // Cleanup camera and intervals when modal closes
   React.useEffect(() => {
     if (!isOpen) {
       stopCamera();
+      
+      // Clear any ongoing progress simulation
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
     }
   }, [isOpen]);
 
@@ -411,7 +468,12 @@ const ReportFormModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) {
+        resetForm();
+      }
+      onClose();
+    }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <div className="flex items-center justify-between">
@@ -435,8 +497,27 @@ const ReportFormModal = ({ isOpen, onClose }) => {
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Fake Progress Bar - shown during submission */}
+          {isSubmitting && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Uploading your report...</span>
+                <span>{uploadProgress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                <div 
+                  className="bg-primary h-2.5 rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${uploadProgress}%` }}
+                ></div>
+              </div>
+              <p className="text-xs text-muted-foreground text-center">
+                Please wait while we process your report...
+              </p>
+            </div>
+          )}
+
           {/* Step 1: Image Upload */}
-          {step === 1 && (
+          {step === 1 && !isSubmitting && (
             <div className="space-y-4">
               <div className="text-center">
                 <h3 className="font-medium mb-2">Take or Upload Photo</h3>
@@ -583,7 +664,7 @@ const ReportFormModal = ({ isOpen, onClose }) => {
           )}
 
           {/* Step 2: Description */}
-          {step === 2 && (
+          {step === 2 && !isSubmitting && (
             <div className="space-y-4">
               <div className="text-center mb-4">
                 <h3 className="font-medium mb-2">Add Description</h3>
@@ -606,7 +687,7 @@ const ReportFormModal = ({ isOpen, onClose }) => {
           )}
 
           {/* Step 3: Location (only if GPS not captured) */}
-          {step === 3 && !formData.coords && (
+          {step === 3 && !formData.coords && !isSubmitting && (
             <div className="space-y-4">
               <div className="text-center mb-4">
                 <h3 className="font-medium mb-2">Location Information</h3>
@@ -657,7 +738,7 @@ const ReportFormModal = ({ isOpen, onClose }) => {
           )}
 
           {/* Step 3/4: Review */}
-          {((step === 3 && formData.coords) || step === 4) && (
+          {((step === 3 && formData.coords) || step === 4) && !isSubmitting && (
             <div className="space-y-4">
               <div className="text-center mb-4">
                 <h3 className="font-medium mb-2">Review & Submit</h3>
@@ -716,6 +797,7 @@ const ReportFormModal = ({ isOpen, onClose }) => {
             <Button
               variant="outline"
               onClick={() => step > 1 ? setStep(step - 1) : onClose()}
+              disabled={isSubmitting}
             >
               {step === 1 ? 'Cancel' : 'Back'}
             </Button>
@@ -732,7 +814,7 @@ const ReportFormModal = ({ isOpen, onClose }) => {
                   handleSubmit();
                 }
               }}
-              disabled={!canProceedToStep(getNextStep(step)) || ((formData.coords && step >= 3) || step === 4) && isSubmitting}
+              disabled={!canProceedToStep(getNextStep(step)) || ((formData.coords && step >= 3) || step === 4) && isSubmitting || isSubmitting}
             >
               {isSubmitting ? (
                 <div className="flex items-center space-x-2">
