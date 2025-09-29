@@ -118,21 +118,13 @@ const AuthenticatedApp = () => {
     );
   }
 
-  if (!isAuthenticated) {
-    return (
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    );
-  }
-
   return (
     <NotificationProvider>
       <ReportsProvider>
         <Routes>
-          <Route path="/*" element={<AppLayout />} />
+          <Route path="/" element={!isAuthenticated ? <Index /> : <AppLayout />} />
+          <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to="/" />} />
+          <Route path="/*" element={isAuthenticated ? <AppLayout /> : <Navigate to="/" />} />
         </Routes>
       </ReportsProvider>
     </NotificationProvider>
