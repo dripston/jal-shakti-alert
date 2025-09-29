@@ -47,12 +47,13 @@ const AuthoritiesDashboard = () => {
   // Statistics (exclude rejected reports)
   const nonRejectedReports = allReports.filter(r => r.status !== 'rejected');
   const highPriorityReports = nonRejectedReports.filter(r => r.alert_level === 'high').length;
-  const pendingVerification = nonRejectedReports.filter(r => r.status === 'pending').length;
+  const pendingVerification = nonRejectedReports.filter(r => r.status === 'pending' || r.status === 'processing').length;
   const approvedToday = nonRejectedReports.filter(r => {
     const today = new Date().toDateString();
-    return r.status === 'approved' && new Date(r.timestamp || r.created_at).toDateString() === today;
+    const reportDate = new Date(r.timestamp).toDateString();
+    return reportDate === today && (r.status === 'processed' || r.status === 'approved');
   }).length;
-  const totalApproved = nonRejectedReports.filter(r => r.status === 'approved').length;
+  const totalApproved = nonRejectedReports.filter(r => r.status === 'processed' || r.status === 'approved').length;
 
   const handleVerifyReport = (reportId) => {
     // In real app, this would make API call to verify report

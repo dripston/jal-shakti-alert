@@ -125,8 +125,54 @@ router.get('/', async (req, res) => {
           });
         }
         
-        console.log(`Fetched ${rows.length} reports from database`);
-        res.json(rows || []);
+        // Transform database rows to match frontend expectations
+        const transformedReports = (rows || []).map(row => {
+          let agents_analysis = {};
+          try {
+            agents_analysis = JSON.parse(row.agents_analysis || '{}');
+          } catch (e) {
+            console.warn('Failed to parse agents_analysis for report', row.id);
+          }
+          
+          return {
+            id: row.id,
+            userId: row.user_id,
+            timestamp: row.created_at,
+            image: row.image_data,
+            coords: {
+              latitude: row.latitude,
+              longitude: row.longitude,
+              accuracy: row.accuracy
+            },
+            address: row.address,
+            location: row.address,
+            description: row.description,
+            visual_tag: row.visual_tag,
+            alert_level: row.alert_level,
+            trustScore: row.trust_score,
+            trust_score: row.trust_score, // Include both for compatibility
+            status: row.status,
+            likes: 0, // Default values for social features
+            comments: 0,
+            shares: 0,
+            // Include all the analysis data
+            visualSummary: agents_analysis.visualSummary,
+            weatherSummary: agents_analysis.weatherSummary,
+            authorityReport: agents_analysis.authorityReport,
+            publicAlert: agents_analysis.publicAlert,
+            volunteerGuidance: agents_analysis.volunteerGuidance,
+            pipelineStatus: agents_analysis.pipelineStatus,
+            rejectionReason: agents_analysis.rejectionReason,
+            errorMessage: agents_analysis.errorMessage,
+            progress: agents_analysis.progress || (row.status === 'processed' ? 100 : 0),
+            processingStep: agents_analysis.processingStep || (row.status === 'processed' ? 5 : 0),
+            // Include the raw agents data for compatibility
+            agents: agents_analysis
+          };
+        });
+        
+        console.log(`Fetched ${transformedReports.length} reports from database`);
+        res.json(transformedReports);
       }
     );
   } catch (error) {
@@ -154,32 +200,65 @@ router.post('/save', async (req, res) => {
     // Extract fields for database insertion
     const {
       id, 
-      user_id = 'anonymous',
-      image_url = null,
-      image_data = null,
-      latitude = null,
-      longitude = null,
-      accuracy = null,
+      userId: user_id = 'anonymous',
+      image = null,
+      coords = null,
       address = null,
       description = report.description || '',
       visual_tag = report.visual_tag || null,
       alert_level = report.alert_level || 'medium',
-      trust_score = report.trust_score || 50,
+      trustScore = null,
+      trust_score = null,
       status = 'pending',
-      agents_analysis = JSON.stringify(report.agents_analysis || {})
+      visualSummary = null,
+      weatherSummary = null,
+      authorityReport = null,
+      publicAlert = null,
+      volunteerGuidance = null,
+      location = null,
+      pipelineStatus = null,
+      rejectionReason = null,
+      errorMessage = null
     } = report;
     
-    // Insert into database
+    // Handle coordinates
+    const latitude = coords?.latitude || coords?.coords?.latitude || null;
+    const longitude = coords?.longitude || coords?.coords?.longitude || null;
+    const accuracy = coords?.accuracy || coords?.coords?.accuracy || null;
+    
+    // Handle trust score (use whichever is available)
+    const finalTrustScore = trustScore || trust_score || 50;
+    
+    // Handle image data
+    const image_data = typeof image === 'string' ? image : null;
+    const image_url = null; // We'll store base64 in image_data for now
+    
+    // Create comprehensive agents analysis
+    const agents_analysis = JSON.stringify({
+      visualSummary: visualSummary || report.visualSummary,
+      weatherSummary: weatherSummary || report.weatherSummary,
+      authorityReport: authorityReport || report.authorityReport,
+      publicAlert: publicAlert || report.publicAlert,
+      volunteerGuidance: volunteerGuidance || report.volunteerGuidance,
+      pipelineStatus: pipelineStatus || report.pipelineStatus,
+      rejectionReason: rejectionReason || report.rejectionReason,
+      errorMessage: errorMessage || report.errorMessage,
+      timestamp: report.timestamp,
+      progress: report.progress,
+      processingStep: report.processingStep
+    });
+    
+    // Insert into database with REPLACE to handle updates
     db.run(
-      `INSERT INTO reports (
+      `INSERT OR REPLACE INTO reports (
         id, user_id, image_url, image_data, latitude, longitude, 
         accuracy, address, description, visual_tag, alert_level, 
         trust_score, status, agents_analysis
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id, user_id, image_url, image_data, latitude, longitude,
-        accuracy, address, description, visual_tag, alert_level,
-        trust_score, status, agents_analysis
+        accuracy, address || location, description, visual_tag, alert_level,
+        finalTrustScore, status, agents_analysis
       ],
       function(err) {
         if (err) {

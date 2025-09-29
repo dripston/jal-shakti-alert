@@ -369,9 +369,7 @@ export const ReportsProvider = ({ children }) => {
       volunteerGuidance: null,
       likes: 0,
       comments: 0,
-      shares: 0,
-      trust_score: calculateInitialTrustScore(reportData),
-      agents: generateMockAgentResponse(reportData)
+      shares: 0
     };
 
     // Add to reports immediately for UI
@@ -422,15 +420,18 @@ export const ReportsProvider = ({ children }) => {
           progress: 100,
           processingStep: 5,
           trustScore: result.trust_evaluation?.score || 0,
-          location: result.location || 'Unknown location',
-          address: result.location || 'Unknown location',
-          visualSummary: result.visual_summary || 'No visual summary available',
-          weatherSummary: result.weather_summary || 'No weather data available',
-          authorityReport: result.reports?.authority_report || 'No authority report available',
-          publicAlert: result.reports?.public_alert || 'No public alert available',
-          volunteerGuidance: result.reports?.volunteer_guidance || 'No volunteer guidance available',
+          trust_score: result.trust_evaluation?.score || 0, // Keep both for compatibility
+          location: result.location || reportData.address || 'Unknown location',
+          address: result.location || reportData.address || 'Unknown location',
+          visualSummary: result.visual_summary,
+          weatherSummary: result.weather_summary,
+          authorityReport: result.reports?.authority_report,
+          publicAlert: result.reports?.public_alert,
+          volunteerGuidance: result.reports?.volunteer_guidance,
           coords: result.coordinates || newReport.coords,
-          pipelineStatus: 'PROCESSED'
+          pipelineStatus: 'PROCESSED',
+          // Keep the original image
+          image: reportData.image
         };
       } else if (result.status === 'REJECTED') {
         // Rejected by pipeline
@@ -440,19 +441,21 @@ export const ReportsProvider = ({ children }) => {
           progress: 100,
           processingStep: 5,
           trustScore: 0,
-          trust_score: 0, // Also set this for consistency
+          trust_score: 0,
           location: reportData.address || 'Unknown location',
           address: reportData.address || 'Unknown location',
-          visualSummary: result.visual_summary || 'No visual analysis available',
-          weatherSummary: 'Not applicable - report rejected',
-          authorityReport: `Report rejected: ${result.reason}`,
-          publicAlert: 'No alert generated - report did not meet criteria',
-          volunteerGuidance: 'No guidance available for rejected reports',
+          visualSummary: result.visual_summary,
+          weatherSummary: null,
+          authorityReport: null,
+          publicAlert: null,
+          volunteerGuidance: null,
           coords: newReport.coords,
           pipelineStatus: 'REJECTED',
           rejectionReason: result.reason,
           weatherEmergencyRelated: result.weather_emergency_related,
-          screenCaptureDetected: result.screen_capture_detected
+          screenCaptureDetected: result.screen_capture_detected,
+          // Keep the original image
+          image: reportData.image
         };
       } else if (result.status === 'ERROR') {
         // Pipeline error
@@ -462,17 +465,19 @@ export const ReportsProvider = ({ children }) => {
           progress: 100,
           processingStep: 5,
           trustScore: 0,
-          trust_score: 0, // Also set this for consistency
+          trust_score: 0,
           location: reportData.address || 'Unknown location',
           address: reportData.address || 'Unknown location',
-          visualSummary: 'Processing failed',
-          weatherSummary: 'Not available due to processing error',
-          authorityReport: `Processing error: ${result.message}`,
-          publicAlert: 'No alert generated due to processing error',
-          volunteerGuidance: 'Please try submitting the report again',
+          visualSummary: null,
+          weatherSummary: null,
+          authorityReport: null,
+          publicAlert: null,
+          volunteerGuidance: null,
           coords: newReport.coords,
           pipelineStatus: 'ERROR',
-          errorMessage: result.message
+          errorMessage: result.message,
+          // Keep the original image
+          image: reportData.image
         };
       } else {
         // Fallback for unknown status or different response format
@@ -485,15 +490,18 @@ export const ReportsProvider = ({ children }) => {
           progress: 100,
           processingStep: 5,
           trustScore: result.trust_evaluation?.score || result.trustScore || 0,
+          trust_score: result.trust_evaluation?.score || result.trustScore || 0,
           location: result.location || result.address || reportData.address || 'Unknown location',
           address: result.location || result.address || reportData.address || 'Unknown location',
-          visualSummary: result.visual_summary || result.visualSummary || 'No visual summary available',
-          weatherSummary: result.weather_summary || result.weatherSummary || 'No weather data available',
-          authorityReport: result.reports?.authority_report || result.authorityReport || 'No authority report available',
-          publicAlert: result.reports?.public_alert || result.publicAlert || 'No public alert available',
-          volunteerGuidance: result.reports?.volunteer_guidance || result.volunteerGuidance || 'No volunteer guidance available',
+          visualSummary: result.visual_summary || result.visualSummary,
+          weatherSummary: result.weather_summary || result.weatherSummary,
+          authorityReport: result.reports?.authority_report || result.authorityReport,
+          publicAlert: result.reports?.public_alert || result.publicAlert,
+          volunteerGuidance: result.reports?.volunteer_guidance || result.volunteerGuidance,
           coords: result.coordinates || result.coords || newReport.coords,
-          pipelineStatus: result.status || (hasValidData ? 'PROCESSED' : 'UNKNOWN')
+          pipelineStatus: result.status || (hasValidData ? 'PROCESSED' : 'UNKNOWN'),
+          // Keep the original image
+          image: reportData.image
         };
       }
       
@@ -559,14 +567,16 @@ export const ReportsProvider = ({ children }) => {
         trust_score: 0,
         location: reportData.address || 'Unknown location',
         address: reportData.address || 'Unknown location',
-        visualSummary: 'Processing failed - connection error',
-        weatherSummary: 'Not available due to connection error',
-        authorityReport: `Connection error: ${error.message}`,
-        publicAlert: 'No alert generated due to connection error',
-        volunteerGuidance: 'Please check your connection and try again',
+        visualSummary: null,
+        weatherSummary: null,
+        authorityReport: null,
+        publicAlert: null,
+        volunteerGuidance: null,
         coords: newReport.coords,
         pipelineStatus: 'ERROR',
-        errorMessage: error.message
+        errorMessage: error.message,
+        // Keep the original image
+        image: reportData.image
       };
       
       // Update report with error state (with a small delay to ensure it overrides progress simulation)
@@ -596,48 +606,7 @@ export const ReportsProvider = ({ children }) => {
     }
   }, [user, isOnline, addNotification, startProgressSimulation, stopProgressSimulation]);
 
-  const calculateInitialTrustScore = (reportData) => {
-    let score = 50; // Base score
-    
-    // Adjust based on user trust rating
-    if (user?.trust_rating) {
-      score += (user.trust_rating - 50) * 0.3;
-    }
-    
-    // Adjust based on report quality indicators
-    if (reportData.description && reportData.description.length > 50) {
-      score += 10; // Detailed description
-    }
-    
-    if (reportData.coords) {
-      score += 15; // GPS coordinates available
-    }
-    
-    // Random variation
-    score += (Math.random() - 0.5) * 20;
-    
-    return Math.max(0, Math.min(100, Math.round(score)));
-  };
 
-  const generateMockAgentResponse = (reportData) => {
-    const visualTags = {
-      'oil_slick': 'oil_slick_detected',
-      'marine_debris': 'debris_accumulation',
-      'algae_bloom': 'harmful_algae_bloom',
-      'coastal_erosion': 'erosion_pattern',
-      'chemical_spill': 'chemical_contamination',
-      'dead_fish': 'fish_mortality_event'
-    };
-
-    return {
-      visual_summary: visualTags[reportData.visual_tag] || 'environmental_anomaly',
-      weather_check: {
-        source: 'IMD',
-        status: ['clear', 'cloudy', 'storm', 'post_storm'][Math.floor(Math.random() * 4)]
-      },
-      reasoning: ['urgent_alert', 'needs_verification', 'environmental_concern'][Math.floor(Math.random() * 3)]
-    };
-  };
 
   const likeReport = async (reportId) => {
     const updatedReports = reports.map(report => 
