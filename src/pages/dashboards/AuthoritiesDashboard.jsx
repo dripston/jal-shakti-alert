@@ -342,6 +342,38 @@ const AuthoritiesDashboard = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* Expanded Details */}
+                  {expandedReports[report.id] && (
+                    <div className="space-y-3 border-t pt-3">
+                      {report.trustReasoning && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                          <h4 className="text-sm font-medium text-yellow-900 mb-2">⚖️ Trust Evaluation Details</h4>
+                          <div className="text-sm text-yellow-800 whitespace-pre-line">
+                            {report.trustReasoning}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {report.publicAlert && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                          <h4 className="text-sm font-medium text-red-900 mb-2">📢 Public Alert</h4>
+                          <div className="text-sm text-red-800 whitespace-pre-line">
+                            {report.publicAlert}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {report.volunteerGuidance && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                          <h4 className="text-sm font-medium text-green-900 mb-2">🦺 Volunteer Guidance</h4>
+                          <div className="text-sm text-green-800 whitespace-pre-line">
+                            {report.volunteerGuidance}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 
                 {/* Authority Actions */}
@@ -380,9 +412,13 @@ const AuthoritiesDashboard = () => {
                     <Button 
                       size="sm" 
                       variant="outline"
+                      onClick={() => setExpandedReports(prev => ({
+                        ...prev,
+                        [report.id]: !prev[report.id]
+                      }))}
                     >
                       <Eye className="h-4 w-4 mr-1" />
-                      View Details
+                      {expandedReports[report.id] ? 'Hide Details' : 'View Details'}
                     </Button>
                     
                     <Button 

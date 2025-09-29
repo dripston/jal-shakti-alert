@@ -222,27 +222,60 @@ const ProcessedReport = ({ report }) => {
           )}
         </div>
         
-        {/* Generated reports - Only show when expanded or if very short */}
+        {/* Generated reports - Show all available details when expanded */}
         {isExpanded && (
-          <div className="space-y-3 border-t pt-3">
+          <div className="space-y-4 border-t pt-4">
+            {report.visualSummary && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Visual Analysis</h4>
+                <div className="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded-lg">
+                  {report.visualSummary}
+                </div>
+              </div>
+            )}
+            
+            {report.weatherSummary && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Weather Analysis</h4>
+                <div className="text-sm text-gray-600 whitespace-pre-line bg-blue-50 p-3 rounded-lg">
+                  {report.weatherSummary}
+                </div>
+              </div>
+            )}
+            
+            {report.trustReasoning && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Trust Evaluation</h4>
+                <div className="text-sm text-gray-600 whitespace-pre-line bg-yellow-50 p-3 rounded-lg">
+                  {report.trustReasoning}
+                </div>
+              </div>
+            )}
+            
             {report.authorityReport && (
               <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-1">Authority Report</h4>
-                <p className="text-sm text-gray-600">{report.authorityReport}</p>
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Authority Report</h4>
+                <div className="text-sm text-gray-600 whitespace-pre-line bg-red-50 p-3 rounded-lg">
+                  {report.authorityReport}
+                </div>
               </div>
             )}
             
             {report.publicAlert && (
               <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-1">Public Alert</h4>
-                <p className="text-sm text-gray-600">{report.publicAlert}</p>
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Public Alert</h4>
+                <div className="text-sm text-gray-600 whitespace-pre-line bg-orange-50 p-3 rounded-lg">
+                  {report.publicAlert}
+                </div>
               </div>
             )}
             
             {report.volunteerGuidance && (
               <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-1">Volunteer Guidance</h4>
-                <p className="text-sm text-gray-600">{report.volunteerGuidance}</p>
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Volunteer Guidance</h4>
+                <div className="text-sm text-gray-600 whitespace-pre-line bg-green-50 p-3 rounded-lg">
+                  {report.volunteerGuidance}
+                </div>
               </div>
             )}
           </div>

@@ -188,45 +188,7 @@ export const ReportsProvider = ({ children }) => {
     }
   };
 
-  // Progress simulation for better UX
-  const progressTimeouts = useRef(new Map());
-  
-  const startProgressSimulation = useCallback((reportId) => {
-    // Clear any existing timeouts for this report
-    if (progressTimeouts.current.has(reportId)) {
-      progressTimeouts.current.get(reportId).forEach(clearTimeout);
-    }
-    
-    const steps = [
-      { step: 1, progress: 20, delay: 500 },   // Uploaded
-      { step: 2, progress: 40, delay: 1500 },  // Visual Summary
-      { step: 3, progress: 60, delay: 2000 },  // Weather Data
-      { step: 4, progress: 80, delay: 1000 },  // Trust Evaluation
-    ];
 
-    const timeouts = [];
-    
-    steps.forEach(({ step, progress, delay }, index) => {
-      const timeout = setTimeout(() => {
-        setReports(prev => prev.map(report => 
-          report.id === reportId 
-            ? { ...report, processingStep: step, progress }
-            : report
-        ));
-      }, steps.slice(0, index + 1).reduce((acc, curr) => acc + curr.delay, 0));
-      
-      timeouts.push(timeout);
-    });
-    
-    progressTimeouts.current.set(reportId, timeouts);
-  }, []);
-  
-  const stopProgressSimulation = useCallback((reportId) => {
-    if (progressTimeouts.current.has(reportId)) {
-      progressTimeouts.current.get(reportId).forEach(clearTimeout);
-      progressTimeouts.current.delete(reportId);
-    }
-  }, []);
 
   const syncQueuedReports = useCallback(async () => {
     if (queuedReports.length === 0) return;
@@ -245,8 +207,6 @@ export const ReportsProvider = ({ children }) => {
     try {
       for (const report of queuedReports) {
         try {
-          // Start progress simulation for queued reports
-          startProgressSimulation(report.id);
           
           // Send data to backend API
           const result = await uploadReport(report.image, {
@@ -355,13 +315,13 @@ export const ReportsProvider = ({ children }) => {
     const newReport = {
       id: `r_${Date.now()}`,
       userId: user.id,
-      ...reportData,
+      ...reportData, // This includes the image
       timestamp: new Date().toISOString(),
       status: isOnline ? 'pending' : 'queued',
       progress: 0,
       processingStep: 0, // 0: not started, 1: uploaded, 2: visual summary, 3: weather data, 4: trust evaluation, 5: reports generated
       trustScore: null,
-      location: null,
+      location: reportData.address || null, // Use address from reportData if available
       visualSummary: null,
       weatherSummary: null,
       authorityReport: null,
@@ -389,8 +349,12 @@ export const ReportsProvider = ({ children }) => {
       return newReport;
     }
 
-    // Start progress simulation for better UX
-    startProgressSimulation(newReport.id);
+    // Set to processing immediately
+    setReports(prev => prev.map(report => 
+      report.id === newReport.id 
+        ? { ...report, status: 'processing', progress: 20 }
+        : report
+    ));
     
     try {
       console.log('Sending report to SIH pipeline...', {
@@ -400,37 +364,36 @@ export const ReportsProvider = ({ children }) => {
       
       // Send data to backend API
       const result = await uploadReport(reportData.image, {
-        coords: reportData.coords,
+        coords: reportData.coords || reportData.gps?.coords,
         timestamp: Date.now()
       });
       
       console.log('SIH Pipeline Response:', result);
       
-      // Stop progress simulation since we have real results
-      stopProgressSimulation(newReport.id);
+
       
       // Handle different response statuses from SIH pipeline
       let updatedReport;
       
       if (result.status === 'PROCESSED') {
-        // Successful processing
+        // Successful processing - use exact data from pipeline
         updatedReport = {
           ...newReport,
           status: 'processed',
           progress: 100,
           processingStep: 5,
           trustScore: result.trust_evaluation?.score || 0,
-          trust_score: result.trust_evaluation?.score || 0, // Keep both for compatibility
-          location: result.location || reportData.address || 'Unknown location',
-          address: result.location || reportData.address || 'Unknown location',
+          trust_score: result.trust_evaluation?.score || 0,
+          location: result.location,
+          address: result.location,
           visualSummary: result.visual_summary,
           weatherSummary: result.weather_summary,
           authorityReport: result.reports?.authority_report,
           publicAlert: result.reports?.public_alert,
           volunteerGuidance: result.reports?.volunteer_guidance,
-          coords: result.coordinates || newReport.coords,
+          coords: result.coordinates || reportData.coords || reportData.gps?.coords,
           pipelineStatus: 'PROCESSED',
-          // Keep the original image
+          trustReasoning: result.trust_evaluation?.reasoning,
           image: reportData.image
         };
       } else if (result.status === 'REJECTED') {
@@ -480,8 +443,7 @@ export const ReportsProvider = ({ children }) => {
           image: reportData.image
         };
       } else {
-        // Fallback for unknown status or different response format
-        // Handle case where SIH pipeline returns data without explicit status
+        // Fallback - assume it's processed if we have data
         const hasValidData = result.visual_summary || result.trust_evaluation || result.reports;
         
         updatedReport = {
@@ -489,18 +451,18 @@ export const ReportsProvider = ({ children }) => {
           status: hasValidData ? 'processed' : 'error',
           progress: 100,
           processingStep: 5,
-          trustScore: result.trust_evaluation?.score || result.trustScore || 0,
-          trust_score: result.trust_evaluation?.score || result.trustScore || 0,
-          location: result.location || result.address || reportData.address || 'Unknown location',
-          address: result.location || result.address || reportData.address || 'Unknown location',
-          visualSummary: result.visual_summary || result.visualSummary,
-          weatherSummary: result.weather_summary || result.weatherSummary,
-          authorityReport: result.reports?.authority_report || result.authorityReport,
-          publicAlert: result.reports?.public_alert || result.publicAlert,
-          volunteerGuidance: result.reports?.volunteer_guidance || result.volunteerGuidance,
-          coords: result.coordinates || result.coords || newReport.coords,
-          pipelineStatus: result.status || (hasValidData ? 'PROCESSED' : 'UNKNOWN'),
-          // Keep the original image
+          trustScore: result.trust_evaluation?.score || 0,
+          trust_score: result.trust_evaluation?.score || 0,
+          location: result.location,
+          address: result.location,
+          visualSummary: result.visual_summary,
+          weatherSummary: result.weather_summary,
+          authorityReport: result.reports?.authority_report,
+          publicAlert: result.reports?.public_alert,
+          volunteerGuidance: result.reports?.volunteer_guidance,
+          coords: result.coordinates || newReport.coords,
+          pipelineStatus: hasValidData ? 'PROCESSED' : 'UNKNOWN',
+          trustReasoning: result.trust_evaluation?.reasoning,
           image: reportData.image
         };
       }
@@ -554,8 +516,7 @@ export const ReportsProvider = ({ children }) => {
     } catch (error) {
       console.error('Error processing report:', error);
       
-      // Stop progress simulation
-      stopProgressSimulation(newReport.id);
+
       
       // Update report to show error state
       const errorReport = {

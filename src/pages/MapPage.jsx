@@ -54,12 +54,16 @@ const MapPage = () => {
   }, [reports, showHeatmap, showAlertZones]);
 
   useEffect(() => {
-    if (selectedReport && mapInstanceRef.current && selectedReport.latitude && selectedReport.longitude) {
-      // Fly to selected report
-      mapInstanceRef.current.flyTo([selectedReport.latitude, selectedReport.longitude], 15, {
-        animate: true,
-        duration: 1.5
-      });
+    if (selectedReport && mapInstanceRef.current) {
+      const lat = selectedReport.coords?.latitude || selectedReport.latitude;
+      const lng = selectedReport.coords?.longitude || selectedReport.longitude;
+      if (lat && lng) {
+        // Fly to selected report
+        mapInstanceRef.current.flyTo([lat, lng], 15, {
+          animate: true,
+          duration: 1.5
+        });
+      }
     }
   }, [selectedReport]);
 
@@ -108,9 +112,11 @@ const MapPage = () => {
     // Add markers for each report
     reports.forEach(report => {
       // Skip if report doesn't have valid coordinates
-      if (!report.latitude || !report.longitude) return;
+      const lat = report.coords?.latitude || report.latitude;
+      const lng = report.coords?.longitude || report.longitude;
+      if (!lat || !lng) return;
       
-      const markerColor = getMarkerColor(report.trust_score, report.alert_level);
+      const markerColor = getMarkerColor(report.trustScore || report.trust_score, report.alert_level);
       
       // Create custom icon based on trust score and alert level
       const icon = L.divIcon({
@@ -132,18 +138,18 @@ const MapPage = () => {
         iconAnchor: [10, 10]
       });
 
-      const marker = L.marker([report.latitude, report.longitude], { icon })
+      const marker = L.marker([lat, lng], { icon })
         .addTo(map)
         .on('click', () => setSelectedReport(report));
 
       // Add popup with basic info
       const popupContent = `
         <div style="min-width: 200px;">
-          <div style="font-weight: bold; margin-bottom: 5px;">${report.visual_tag?.replace('_', ' ').toUpperCase() || 'Ocean Hazard'}</div>
-          <div style="font-size: 12px; color: #666; margin-bottom: 5px;">${report.address || 'Location not specified'}</div>
+          <div style="font-weight: bold; margin-bottom: 5px;">${report.visual_tag?.replace('_', ' ').toUpperCase() || 'Water Quality Report'}</div>
+          <div style="font-size: 12px; color: #666; margin-bottom: 5px;">${report.address || report.location || 'Location not specified'}</div>
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div style="background: ${markerColor}; color: white; padding: 2px 6px; border-radius: 10px; font-size: 11px;">
-              Trust: ${report.trust_score || 50}%
+              Trust: ${report.trustScore || report.trust_score || 0}%
             </div>
             <div style="font-size: 11px; color: #666;">
               ${new Date(report.timestamp || report.created_at).toLocaleDateString()}
@@ -263,7 +269,11 @@ const MapPage = () => {
               <span>High Trust / Low Alert</span>
             </div>
             <div className="text-xs text-muted-foreground pt-1 border-t">
-              <div>📍 Markers: {reports.length} reports</div>
+              <div>📍 Markers: {reports.filter(r => {
+                const lat = r.coords?.latitude || r.latitude;
+                const lng = r.coords?.longitude || r.longitude;
+                return lat && lng;
+              }).length} reports</div>
               {showAlertZones && <div>🚨 Alert zones active</div>}
               {showHeatmap && <div>🔥 Heatmap overlay</div>}
             </div>

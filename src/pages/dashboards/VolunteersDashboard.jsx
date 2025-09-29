@@ -7,28 +7,47 @@ import { Users, MapPin, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
 
 const VolunteersDashboard = () => {
   const { allReports } = useReports();
+  const [expandedTasks, setExpandedTasks] = React.useState({});
   
-  // Show pending and approved reports as potential tasks for volunteers (exclude rejected)
+  // Show processed reports as potential tasks for volunteers (exclude rejected and errors)
   const tasks = allReports.filter(r => 
-    (r.status === 'pending' || r.status === 'approved' || r.status === 'processed') && 
     r.status !== 'rejected' && 
-    (r.trustScore || r.trust_score || 0) >= 50
+    r.status !== 'error' &&
+    (r.trustScore || r.trust_score || 0) >= 30 // Lower threshold for volunteers
   ).slice(0, 10);
   const completedTasks = Math.floor(tasks.length * 0.6);
 
   return (
-    <div className="container-mobile py-6 space-y-6">
-      <div className="flex items-center space-x-3">
-        <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center">
-          <Users className="h-5 w-5 text-white" />
-        </div>
-        <div>
-          <h1 className="text-xl font-heading font-bold">Volunteers Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Coordinate response tasks and assignments</p>
+    <div className="py-6 lg:py-0 space-y-6">
+      {/* Mobile Header */}
+      <div className="lg:hidden flex items-center justify-between px-4">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center">
+            <Users className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-heading font-bold">Volunteers Dashboard</h1>
+            <p className="text-sm text-muted-foreground">Coordinate response tasks and assignments</p>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      {/* Desktop Header */}
+      <div className="hidden lg:block">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center">
+              <Users className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-heading font-bold">Volunteers Dashboard</h1>
+              <p className="text-muted-foreground">Coordinate response tasks and assignments</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 px-4 lg:px-0">
         <Card>
           <CardContent className="pt-6 text-center">
             <p className="text-2xl font-bold text-yellow-500">{tasks.length}</p>
@@ -43,8 +62,8 @@ const VolunteersDashboard = () => {
         </Card>
       </div>
 
-      <div className="space-y-4">
-        <h2 className="text-lg font-heading font-semibold">Available Tasks</h2>
+      <div className="space-y-4 px-4 lg:px-0">
+        <h2 className="text-lg lg:text-xl font-heading font-semibold">Available Tasks</h2>
         
         {tasks.length === 0 ? (
           <Card>
@@ -73,8 +92,11 @@ const VolunteersDashboard = () => {
                     )}
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-1">
-                        <Badge variant="destructive">
-                          URGENT - {task.alert_level?.toUpperCase() || 'HIGH'} PRIORITY
+                        <Badge variant={
+                          task.alert_level === 'high' ? 'destructive' : 
+                          task.alert_level === 'medium' ? 'default' : 'secondary'
+                        }>
+                          {task.alert_level?.toUpperCase() || 'MEDIUM'} PRIORITY
                         </Badge>
                         <Badge variant="outline">
                           Trust Score: {task.trustScore || task.trust_score || 0}%
@@ -122,6 +144,38 @@ const VolunteersDashboard = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* Expanded Details */}
+                  {expandedTasks[task.id] && (
+                    <div className="space-y-3 border-t pt-3">
+                      {task.visualSummary && (
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                          <h4 className="text-sm font-medium text-gray-900 mb-2">🔍 Visual Analysis</h4>
+                          <div className="text-sm text-gray-700 whitespace-pre-line">
+                            {task.visualSummary}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {task.authorityReport && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                          <h4 className="text-sm font-medium text-blue-900 mb-2">🏛️ Authority Assessment</h4>
+                          <div className="text-sm text-blue-800 whitespace-pre-line">
+                            {task.authorityReport}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {task.trustReasoning && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                          <h4 className="text-sm font-medium text-yellow-900 mb-2">⚖️ Trust Evaluation</h4>
+                          <div className="text-sm text-yellow-800 whitespace-pre-line">
+                            {task.trustReasoning}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Volunteer Actions */}
@@ -150,8 +204,12 @@ const VolunteersDashboard = () => {
                     <Button 
                       size="sm" 
                       variant="outline"
+                      onClick={() => setExpandedTasks(prev => ({
+                        ...prev,
+                        [task.id]: !prev[task.id]
+                      }))}
                     >
-                      ℹ️ More Details
+                      ℹ️ {expandedTasks[task.id] ? 'Hide Details' : 'More Details'}
                     </Button>
                   </div>
                   

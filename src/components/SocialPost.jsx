@@ -31,7 +31,7 @@ const SocialPost = ({ report }) => {
     return cleaned;
   };
 
-  // Create a user-friendly summary
+  // Create a user-friendly summary based on actual pipeline data
   const getUserFriendlySummary = () => {
     if (report.status === 'rejected') {
       return "This report didn't meet our verification criteria. Thanks for staying vigilant! 🛡️";
@@ -41,15 +41,17 @@ const SocialPost = ({ report }) => {
       return "We're having trouble processing this report. Our team is looking into it. ⚠️";
     }
 
-    // For processed reports, create a friendly summary
+    // For processed reports, use actual trust score from pipeline
     const trustScore = report.trustScore || report.trust_score || 0;
     
-    if (trustScore >= 80) {
-      return "✅ Verified report - Authorities have been notified and are responding.";
+    if (trustScore >= 70) {
+      return "✅ High confidence report - Authorities have been notified and are responding.";
     } else if (trustScore >= 50) {
-      return "⚠️ Report under review - We're checking with local authorities.";
+      return "⚠️ Moderate confidence - Report under review by local authorities.";
+    } else if (trustScore > 0) {
+      return "🔍 Low confidence - This report needs additional verification.";
     } else {
-      return "🔍 Investigating - This report needs additional verification.";
+      return "❌ Report could not be verified - Thank you for your vigilance.";
     }
   };
 
