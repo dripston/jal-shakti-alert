@@ -12,6 +12,7 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import LoginPage from './pages/LoginPage';
+import Index from './pages/Index';
 import FeedPage from './pages/FeedPage';
 import MapPage from './pages/MapPage';
 import ProfilePage from './pages/ProfilePage';
@@ -118,7 +119,13 @@ const AuthenticatedApp = () => {
   }
 
   if (!isAuthenticated) {
-    return <LoginPage />;
+    return (
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    );
   }
 
   return (

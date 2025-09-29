@@ -41,13 +41,13 @@ const LoginPage = () => {
         });
         toast({
           title: "Welcome back!",
-          description: "Successfully logged in to OceanWatch.",
+          description: "Successfully logged in to Pragyan Chakra.",
         });
       } else {
         await register(formData);
         toast({
           title: "Account created!",
-          description: "Welcome to the OceanWatch community.",
+          description: "Welcome to the Pragyan Chakra community.",
         });
       }
     } catch (error) {
@@ -63,7 +63,7 @@ const LoginPage = () => {
 
   const quickLogin = () => {
     setFormData({
-      email: 'demo@oceanwatch.in',
+      email: 'demo@pragyan-chakra.in',
       password: 'demo123'
     });
   };
@@ -76,8 +76,8 @@ const LoginPage = () => {
           <div className="mx-auto h-16 w-16 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center mb-4">
             <Waves className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-3xl font-heading font-bold text-primary">OceanWatch</h1>
-          <p className="text-muted-foreground">Crowd-sourced ocean hazard monitoring</p>
+          <h1 className="text-3xl font-heading font-bold text-primary">Pragyan Chakra</h1>
+          <p className="text-muted-foreground">Smart water management and hazard reporting</p>
         </div>
 
         {/* Auth Card */}
@@ -88,8 +88,8 @@ const LoginPage = () => {
             </CardTitle>
             <p className="text-sm text-muted-foreground">
               {isLogin 
-                ? 'Sign in to continue monitoring ocean health'
-                : 'Help protect our oceans together'
+                ? 'Sign in to continue managing water resources'
+                : 'Join our community for sustainable water management'
               }
             </p>
           </CardHeader>
@@ -207,7 +207,7 @@ const LoginPage = () => {
                   Quick Demo Login
                 </Button>
                 <p className="text-xs text-muted-foreground text-center mt-2">
-                  Use demo@oceanwatch.in / demo123
+                  Use demo@pragyan-chakra.in / demo123
                 </p>
               </div>
             )}
@@ -231,10 +231,10 @@ const LoginPage = () => {
 
         {/* Features Preview */}
         <div className="text-center space-y-2 text-sm text-muted-foreground">
-          <p>🌊 Report ocean hazards instantly</p>
+          <p>💧 Report water hazards instantly</p>
           <p>🗺️ View real-time hazard maps</p>
           <p>📱 Works offline with sync-later</p>
-          <p>🤝 Community-driven ocean protection</p>
+          <p>🤝 Community-driven water management</p>
         </div>
       </div>
     </div>
