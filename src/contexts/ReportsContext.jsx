@@ -357,16 +357,18 @@ export const ReportsProvider = ({ children }) => {
     ));
     
     try {
-      console.log('Sending report to SIH pipeline...', {
-        coords: reportData.coords,
-        hasImage: !!reportData.image
-      });
+      console.log('Sending report to SIH pipeline...');
+      console.log('reportData:', reportData);
+      console.log('reportData.coords:', reportData.coords);
+      console.log('reportData.gps:', reportData.gps);
       
       // Send data to backend API
-      const result = await uploadReport(reportData.image, {
+      const gpsData = {
         coords: reportData.coords || reportData.gps?.coords,
         timestamp: Date.now()
-      });
+      };
+      console.log('GPS data being sent:', gpsData);
+      const result = await uploadReport(reportData.image, gpsData);
       
       console.log('SIH Pipeline Response:', result);
       

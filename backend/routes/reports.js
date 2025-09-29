@@ -26,11 +26,17 @@ const SIH_PIPELINE_URL = 'https://pipeline-1-sih.onrender.com';
 // Process report endpoint - proxies to SIH pipeline with multipart form data
 router.post('/process', upload.single('image'), async (req, res) => {
   try {
+    console.log('Process endpoint called');
+    console.log('req.file:', req.file ? 'Present' : 'Missing');
+    console.log('req.body:', req.body);
+    
     if (!req.file) {
+      console.log('No image file provided');
       return res.status(400).json({ error: 'No image file provided' });
     }
 
     if (!req.body.gps) {
+      console.log('No GPS data provided');
       return res.status(400).json({ error: 'GPS data is required' });
     }
 
