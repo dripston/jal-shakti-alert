@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { MapPin, Clock, Heart, MessageCircle, Share2, MoreHorizontal } from 'lucide-react';
+import { MapPin, Clock, Heart, MessageCircle, Share2, MoreHorizontal, Eye, CloudRain, FileText } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const SocialPost = ({ report }) => {
   const [isLiked, setIsLiked] = useState(false);
-  const [showComments, setShowComments] = useState(false);
+  const [activeTab, setActiveTab] = useState(null);
+  const { user } = useAuth();
   
   // Safety check - return null if report is undefined
   if (!report) {
@@ -71,133 +73,166 @@ const SocialPost = ({ report }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-4 lg:mb-0 overflow-hidden">
-      {/* Post Header */}
-      <div className="flex items-center justify-between p-4 pb-3 lg:p-6 lg:pb-4">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            <span className="text-white font-medium text-sm lg:text-base">👤</span>
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm max-w-2xl mx-auto mb-4 overflow-hidden">
+      {/* Twitter-like Header */}
+      <div className="flex items-start space-x-3 p-4">
+        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+          <span className="text-white font-medium text-lg">
+            {user?.name?.charAt(0)?.toUpperCase() || '👤'}
+          </span>
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center space-x-2">
+            <h3 className="font-semibold text-gray-900 truncate">
+              {user?.name || 'Community Reporter'}
+            </h3>
+            <span className="text-gray-500">•</span>
+            <span className="text-gray-500 text-sm">
+              {formatTimestamp(report.timestamp)}
+            </span>
           </div>
-          <div>
-            <p className="font-medium text-gray-900 lg:text-lg">Community Reporter</p>
-            <div className="flex items-center text-xs lg:text-sm text-gray-500">
-              <MapPin className="w-3 h-3 lg:w-4 lg:h-4 mr-1" />
-              <span className="truncate max-w-32 lg:max-w-48">{report.location || report.address}</span>
-              <span className="mx-2">•</span>
-              <span>{formatTimestamp(report.timestamp)}</span>
-            </div>
+          
+          <div className="flex items-center text-sm text-gray-500 mt-1">
+            <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
+            <span className="truncate">{report.location || report.address || 'Unknown location'}</span>
           </div>
         </div>
         
-        <div className="flex items-center space-x-2">
-          <span className="text-lg lg:text-xl">{getStatusEmoji()}</span>
-          <button className="text-gray-400 hover:text-gray-600 p-1 lg:p-2 rounded-lg hover:bg-gray-100">
-            <MoreHorizontal className="w-5 h-5" />
-          </button>
-        </div>
+        <button className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100">
+          <MoreHorizontal className="w-5 h-5" />
+        </button>
       </div>
 
-      {/* Post Content */}
-      <div className="px-4 pb-3 lg:px-6 lg:pb-4">
-        {report.description && (
-          <p className="text-gray-800 text-sm lg:text-base mb-3 leading-relaxed">
+      {/* Post Text */}
+      {report.description && (
+        <div className="px-4 pb-3">
+          <p className="text-gray-900 leading-relaxed">
             {report.description}
           </p>
-        )}
-        
-        {/* News Summary */}
-        <div className="bg-blue-50 border-l-4 border-blue-500 rounded-r-lg p-3 lg:p-4 mb-3">
-          <div className="flex items-start space-x-2">
-            <div className="text-blue-600 font-semibold text-xs lg:text-sm">BREAKING</div>
-          </div>
-          <p className="text-sm lg:text-base text-gray-800 font-medium mt-1 leading-relaxed">
-            {getNewsSummary()}
-          </p>
         </div>
-      </div>
+      )}
 
       {/* Image */}
       {report.image && (
         <div className="relative">
           <img
             src={report.image}
-            alt="Water hazard report"
-            className="w-full h-80 lg:h-96 object-cover"
+            alt="Water quality report"
+            className="w-full h-80 object-cover"
           />
           
-          {/* Image overlay with location */}
-          <div className="absolute bottom-3 left-3 bg-black/70 text-white px-2 py-1 lg:px-3 lg:py-2 rounded-md text-xs lg:text-sm">
-            📍 {report.location || report.address}
+          {/* Trust Score Overlay */}
+          <div className="absolute top-3 right-3">
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+              (report.trustScore || report.trust_score || 0) >= 50 
+                ? 'bg-green-500 text-white' 
+                : 'bg-red-500 text-white'
+            }`}>
+              {report.trustScore || report.trust_score || 0}% Trust
+            </span>
           </div>
         </div>
       )}
 
-      {/* Engagement Actions */}
-      <div className="p-4 lg:p-6">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-6 lg:space-x-8">
-            <button 
-              onClick={() => setIsLiked(!isLiked)}
-              className={`flex items-center space-x-2 transition-colors p-1 lg:p-2 rounded-lg hover:bg-gray-50 ${
-                isLiked ? 'text-red-500' : 'text-gray-500 hover:text-red-500'
-              }`}
-            >
-              <Heart className={`w-5 h-5 lg:w-6 lg:h-6 ${isLiked ? 'fill-current' : ''}`} />
-              <span className="text-sm lg:text-base font-medium">{(report.likes || 0) + (isLiked ? 1 : 0)}</span>
-            </button>
-            
-            <button 
-              onClick={() => setShowComments(!showComments)}
-              className="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition-colors p-1 lg:p-2 rounded-lg hover:bg-gray-50"
-            >
-              <MessageCircle className="w-5 h-5 lg:w-6 lg:h-6" />
-              <span className="text-sm lg:text-base font-medium">{report.comments || 0}</span>
-            </button>
-            
-            <button className="flex items-center space-x-2 text-gray-500 hover:text-green-500 transition-colors p-1 lg:p-2 rounded-lg hover:bg-gray-50">
-              <Share2 className="w-5 h-5 lg:w-6 lg:h-6" />
-              <span className="text-sm lg:text-base font-medium">Share</span>
-            </button>
-          </div>
+      {/* Action Buttons */}
+      <div className="p-4 border-t border-gray-100">
+        <div className="flex space-x-2 mb-4">
+          <button 
+            onClick={() => setActiveTab(activeTab === 'visual' ? null : 'visual')}
+            className={`flex-1 flex items-center justify-center space-x-2 py-2 px-4 rounded-lg border transition-colors ${
+              activeTab === 'visual' 
+                ? 'bg-blue-50 border-blue-200 text-blue-700' 
+                : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <Eye className="w-4 h-4" />
+            <span className="text-sm font-medium">Visual Summary</span>
+          </button>
           
-          {/* Trust Score Badge */}
-          <div className="flex items-center space-x-1">
-            <span className="text-xs lg:text-sm text-gray-500">Trust:</span>
-            <span className={`text-xs lg:text-sm font-medium px-2 py-1 lg:px-3 lg:py-2 rounded-full ${
-              (report.trustScore || report.trust_score || 0) >= 50 
-                ? 'bg-green-100 text-green-700' 
-                : 'bg-red-100 text-red-700'
-            }`}>
-              {report.trustScore || report.trust_score || 0}%
-            </span>
-          </div>
+          <button 
+            onClick={() => setActiveTab(activeTab === 'weather' ? null : 'weather')}
+            className={`flex-1 flex items-center justify-center space-x-2 py-2 px-4 rounded-lg border transition-colors ${
+              activeTab === 'weather' 
+                ? 'bg-blue-50 border-blue-200 text-blue-700' 
+                : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <CloudRain className="w-4 h-4" />
+            <span className="text-sm font-medium">Weather Report</span>
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab(activeTab === 'user' ? null : 'user')}
+            className={`flex-1 flex items-center justify-center space-x-2 py-2 px-4 rounded-lg border transition-colors ${
+              activeTab === 'user' 
+                ? 'bg-blue-50 border-blue-200 text-blue-700' 
+                : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            <span className="text-sm font-medium">User Report</span>
+          </button>
         </div>
 
-        {/* Comments Section */}
-        {showComments && (
-          <div className="border-t pt-3 mt-3">
-            <div className="space-y-3">
-              {/* Sample comments */}
-              <div className="flex space-x-2">
-                <div className="w-6 h-6 rounded-full bg-gray-300 flex-shrink-0"></div>
-                <div>
-                  <p className="text-sm"><span className="font-medium">Local Resident</span> Thanks for reporting this! Stay safe everyone 🙏</p>
-                  <p className="text-xs text-gray-500 mt-1">2h ago</p>
-                </div>
-              </div>
-              
-              {/* Add comment */}
-              <div className="flex space-x-2 mt-3">
-                <div className="w-6 h-6 rounded-full bg-blue-500 flex-shrink-0"></div>
-                <input 
-                  type="text" 
-                  placeholder="Add a comment..." 
-                  className="flex-1 text-sm bg-gray-100 rounded-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+        {/* Tab Content */}
+        {activeTab === 'visual' && report.visualSummary && (
+          <div className="bg-gray-50 rounded-lg p-4 mb-4">
+            <h4 className="font-medium text-gray-900 mb-2">Visual Analysis</h4>
+            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+              {report.visualSummary}
+            </p>
+          </div>
+        )}
+
+        {activeTab === 'weather' && report.weatherSummary && (
+          <div className="bg-blue-50 rounded-lg p-4 mb-4">
+            <h4 className="font-medium text-gray-900 mb-2">Weather Analysis</h4>
+            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+              {report.weatherSummary}
+            </p>
+          </div>
+        )}
+
+        {activeTab === 'user' && (
+          <div className="bg-green-50 rounded-lg p-4 mb-4">
+            <h4 className="font-medium text-gray-900 mb-2">Report Summary</h4>
+            <div className="text-sm text-gray-700 space-y-2">
+              <p><span className="font-medium">Status:</span> {report.status || 'Processing'}</p>
+              <p><span className="font-medium">Trust Score:</span> {report.trustScore || report.trust_score || 0}%</p>
+              <p><span className="font-medium">Location:</span> {report.location || report.address}</p>
+              <p><span className="font-medium">Submitted:</span> {formatTimestamp(report.timestamp)}</p>
+              {report.description && (
+                <p><span className="font-medium">Description:</span> {report.description}</p>
+              )}
             </div>
           </div>
         )}
+
+        {/* Social Actions */}
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+          <div className="flex items-center space-x-6">
+            <button 
+              onClick={() => setIsLiked(!isLiked)}
+              className={`flex items-center space-x-2 transition-colors ${
+                isLiked ? 'text-red-500' : 'text-gray-500 hover:text-red-500'
+              }`}
+            >
+              <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
+              <span className="text-sm font-medium">{(report.likes || 0) + (isLiked ? 1 : 0)}</span>
+            </button>
+            
+            <button className="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition-colors">
+              <MessageCircle className="w-5 h-5" />
+              <span className="text-sm font-medium">{report.comments || 0}</span>
+            </button>
+            
+            <button className="flex items-center space-x-2 text-gray-500 hover:text-green-500 transition-colors">
+              <Share2 className="w-5 h-5" />
+              <span className="text-sm font-medium">Share</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
