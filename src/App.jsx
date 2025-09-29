@@ -18,9 +18,7 @@ import ProfilePage from './pages/ProfilePage';
 import AuthoritiesDashboard from './pages/dashboards/AuthoritiesDashboard';
 import UsersDashboard from './pages/dashboards/UsersDashboard';
 import VolunteersDashboard from './pages/dashboards/VolunteersDashboard';
-import AuthoritiesAnalytics from './pages/analytics/AuthoritiesAnalytics';
-import UsersAnalytics from './pages/analytics/UsersAnalytics';
-import VolunteersAnalytics from './pages/analytics/VolunteersAnalytics';
+
 import SummaryDashboard from './pages/dashboards/SummaryDashboard';
 import SettingsPage from './pages/SettingsPage';
 import NotFound from './pages/NotFound';
@@ -28,24 +26,7 @@ import Notification from './components/Notification';
 
 const queryClient = new QueryClient();
 
-// Protected Route Component
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
-  
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-  
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  return children;
-};
+
 
 // Main App Layout
 const AppLayout = () => {
@@ -65,34 +46,56 @@ const AppLayout = () => {
   }, [sidebarOpen]);
 
   return (
-    <div className={`flex min-h-screen bg-background ${sidebarOpen ? 'lg:overflow-hidden' : ''}`}>
+    <div className="flex min-h-screen bg-gray-50">
+      {/* Sidebar - Responsive behavior */}
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
-      
+
       <div className="flex-1 flex flex-col min-w-0">
-        <Header
-          onMenuToggle={() => setSidebarOpen((prev) => !prev)}
-          sidebarOpen={sidebarOpen}
-        />
-        
+        {/* Mobile Header */}
+        <div className="lg:hidden">
+          <Header
+            onMenuToggle={() => setSidebarOpen((prev) => !prev)}
+            sidebarOpen={sidebarOpen}
+          />
+        </div>
+
+        {/* Desktop Header */}
+        <div className="hidden lg:block bg-white border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-gray-900">Pragyan Chakra Dashboard</h1>
+            <div className="flex items-center space-x-4">
+              <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+                <span className="text-lg">🔔</span>
+              </button>
+              <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+                <span className="text-lg">⚙️</span>
+              </button>
+              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+                <span className="text-white text-sm font-medium">U</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <main className="flex-1 overflow-auto">
-          <Routes>
-            <Route path="/" element={<FeedPage />} />
-            <Route path="/map" element={<MapPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/dashboard/authorities" element={<AuthoritiesDashboard />} />
-            <Route path="/dashboard/users" element={<UsersDashboard />} />
-            <Route path="/dashboard/volunteers" element={<VolunteersDashboard />} />
-            <Route path="/analytics/authorities" element={<AuthoritiesAnalytics />} />
-            <Route path="/analytics/users" element={<UsersAnalytics />} />
-            <Route path="/analytics/volunteers" element={<VolunteersAnalytics />} />
-            <Route path="/dashboard/summary" element={<SummaryDashboard />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <div className="lg:p-6">
+            <Routes>
+              <Route path="/" element={<FeedPage />} />
+              <Route path="/map" element={<MapPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/dashboard/authorities" element={<AuthoritiesDashboard />} />
+              <Route path="/dashboard/users" element={<UsersDashboard />} />
+              <Route path="/dashboard/volunteers" element={<VolunteersDashboard />} />
+              <Route path="/dashboard/summary" element={<SummaryDashboard />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </div>
         </main>
+
         <Notification />
       </div>
     </div>
@@ -102,22 +105,22 @@ const AppLayout = () => {
 // Auth-aware App Component
 const AuthenticatedApp = () => {
   const { isAuthenticated, isLoading } = useAuth();
-  
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading OceanWatch...</p>
+          <p className="text-muted-foreground">Loading Pragyan Chakra...</p>
         </div>
       </div>
     );
   }
-  
+
   if (!isAuthenticated) {
     return <LoginPage />;
   }
-  
+
   return (
     <NotificationProvider>
       <ReportsProvider>

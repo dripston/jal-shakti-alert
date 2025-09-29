@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -321,7 +321,7 @@ const ReportFormModal = ({ isOpen, onClose }) => {
     try {
       const reportData = {
         image: formData.imagePreview,
-        description: formData.description || "Ocean hazard reported",
+        description: formData.description || "Water hazard reported",
         visual_tag: "general_hazard",
         coords: formData.coords ? {
           latitude: formData.coords.lat,
@@ -331,21 +331,25 @@ const ReportFormModal = ({ isOpen, onClose }) => {
         alert_level: "medium"
       };
 
+      // Close modal immediately for better UX
+      resetForm();
+      onClose();
+
+      // Submit report (this will handle online/offline scenarios)
       await createReport(reportData);
 
+      // Show success message
       toast({
         title: "Report submitted!",
-        description: "Your ocean hazard report has been created successfully.",
+        description: "Your report is being processed. Check the feed for progress updates.",
       });
 
-      onClose();
-      resetForm();
-
     } catch (error) {
+      console.error('Report submission error:', error);
       toast({
-        title: "Submission failed",
-        description: error.message || "Failed to submit report. It has been saved for later sync.",
-        variant: "destructive"
+        title: "Report queued",
+        description: "Your report has been saved and will be submitted when you're back online.",
+        variant: "default"
       });
     } finally {
       setIsSubmitting(false);
@@ -413,7 +417,7 @@ const ReportFormModal = ({ isOpen, onClose }) => {
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center space-x-2">
               <Camera className="h-5 w-5 text-primary" />
-              <span>Report Ocean Hazard</span>
+              <span>Report Water Hazard</span>
             </DialogTitle>
             <div className="flex space-x-1">
               {Array.from({ length: getTotalSteps() }, (_, i) => i + 1).map((i) => (
@@ -425,6 +429,9 @@ const ReportFormModal = ({ isOpen, onClose }) => {
               ))}
             </div>
           </div>
+          <DialogDescription>
+            Submit a report about water hazards or environmental concerns. Follow the steps to capture an image, add details, and submit your report.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -434,7 +441,7 @@ const ReportFormModal = ({ isOpen, onClose }) => {
               <div className="text-center">
                 <h3 className="font-medium mb-2">Take or Upload Photo</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Capture the ocean hazard you want to report
+                  Capture the water hazard you want to report
                 </p>
               </div>
 
@@ -539,22 +546,37 @@ const ReportFormModal = ({ isOpen, onClose }) => {
               />
 
               {!isCameraOpen && !formData.imagePreview && (
-                <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Choose Photo
-                  </Button>
-                  <Button
-                    className="flex-1"
-                    onClick={startCamera}
-                  >
-                    <Camera className="h-4 w-4 mr-2" />
-                    Take Photo
-                  </Button>
+                <div className="space-y-3">
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Choose Photo
+                    </Button>
+                    <Button
+                      className="flex-1"
+                      onClick={startCamera}
+                    >
+                      <Camera className="h-4 w-4 mr-2" />
+                      Take Photo
+                    </Button>
+                  </div>
+                  
+                  {/* Warning note */}
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-start space-x-2">
+                      <span className="text-red-500 text-sm">⚠️</span>
+                      <div>
+                        <p className="text-xs text-red-700 font-medium">Production Note:</p>
+                        <p className="text-xs text-red-600 mt-1">
+                          In the real-time application, users will only be able to capture photos using the app's camera to ensure authenticity and prevent fake reports from screenshots or downloaded images.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

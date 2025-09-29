@@ -61,6 +61,8 @@ export const uploadReport = async (imageData, gps) => {
 export const getReports = async () => {
   // Fetch reports from backend API
   try {
+    console.log('Fetching reports from:', `${API_BASE_URL}/reports`);
+    
     const response = await fetch(`${API_BASE_URL}/reports`, {
       headers: {
         'Accept': 'application/json',
@@ -68,17 +70,51 @@ export const getReports = async () => {
     });
     
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Get reports failed:', response.status, errorText);
+      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
     }
     
-    return await response.json();
+    const reports = await response.json();
+    console.log(`Fetched ${reports.length} reports from database`);
+    return reports;
   } catch (error) {
     console.error('Error fetching reports:', error);
     return []; // Return empty array instead of mock data
   }
 };
 
+export const saveReport = async (report) => {
+  try {
+    console.log('Saving report to database:', report.id);
+    console.log('API URL:', `${API_BASE_URL}/reports/save`);
+    
+    const response = await fetch(`${API_BASE_URL}/reports/save`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(report)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Save report failed:', response.status, errorText);
+      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log('Report saved successfully:', result);
+    return result;
+  } catch (error) {
+    console.error('Error saving report:', error);
+    throw error;
+  }
+};
+
 export default {
   uploadReport,
-  getReports
+  getReports,
+  saveReport
 };

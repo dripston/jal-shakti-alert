@@ -15,12 +15,24 @@ const ReportProgress = ({ report }) => {
 
   const getStepLabel = (step) => {
     switch(step) {
-      case 0: return 'Not Started';
-      case 1: return 'Uploaded';
-      case 2: return 'Processing Visual Summary';
-      case 3: return 'Processing Weather Data';
-      case 4: return 'Running Trust Evaluation';
-      case 5: return 'Generating Reports';
+      case 0: return 'Preparing submission...';
+      case 1: return 'Image uploaded successfully';
+      case 2: return 'AI analyzing visual content...';
+      case 3: return 'Checking weather conditions...';
+      case 4: return 'Calculating trust score...';
+      case 5: return 'Generating final reports';
+      default: return '';
+    }
+  };
+
+  const getStepDescription = (step) => {
+    switch(step) {
+      case 0: return 'Getting ready to process your report';
+      case 1: return 'Your image has been securely uploaded';
+      case 2: return 'Our AI is identifying hazards in your image';
+      case 3: return 'Cross-referencing with real-time weather data';
+      case 4: return 'Evaluating report credibility using multiple sources';
+      case 5: return 'Creating alerts for authorities and volunteers';
       default: return '';
     }
   };
@@ -79,11 +91,12 @@ const ReportProgress = ({ report }) => {
     ),
     
     // Current status
-    React.createElement('div', { className: 'mt-6 p-3 bg-saffron-50 rounded-lg' },
-      React.createElement('p', { className: 'text-sm text-saffron-700' },
-        React.createElement('span', { className: 'font-medium' }, 'Current step:'),
-        ' ', getStepLabel(currentStep)
-      )
+    React.createElement('div', { className: 'mt-6 p-4 bg-gradient-to-r from-saffron-50 to-orange-50 rounded-lg border border-saffron-200' },
+      React.createElement('div', { className: 'flex items-center space-x-2 mb-2' },
+        React.createElement('div', { className: 'animate-pulse w-2 h-2 bg-saffron-500 rounded-full' }),
+        React.createElement('p', { className: 'text-sm font-medium text-saffron-800' }, getStepLabel(currentStep))
+      ),
+      React.createElement('p', { className: 'text-xs text-saffron-600' }, getStepDescription(currentStep))
     )
   );
 };

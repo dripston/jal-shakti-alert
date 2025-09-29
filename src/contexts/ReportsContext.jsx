@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import localforage from 'localforage';
 import { useAuth } from './AuthContext';
 import { useNotifications } from './NotificationContext';
-import { uploadReport } from '../services/api';
+import { uploadReport, getReports, saveReport } from '../services/api';
 // Mock data imports removed - using real SIH pipeline only
 
 const ReportsContext = createContext();
@@ -32,8 +32,28 @@ export const ReportsProvider = ({ children }) => {
 
   // Update online status
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
+    const handleOnline = () => {
+      setIsOnline(true);
+      // Notify user they're back online if there are queued reports
+      if (queuedReports.length > 0 && addNotification) {
+        addNotification({
+          title: 'Back Online!',
+          message: `Automatically submitting ${queuedReports.length} queued report${queuedReports.length > 1 ? 's' : ''}...`,
+          type: 'info'
+        });
+      }
+    };
+    
+    const handleOffline = () => {
+      setIsOnline(false);
+      if (addNotification) {
+        addNotification({
+          title: 'You\'re Offline',
+          message: 'New reports will be queued and submitted when you reconnect.',
+          type: 'warning'
+        });
+      }
+    };
     
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
@@ -42,7 +62,7 @@ export const ReportsProvider = ({ children }) => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, []);
+  }, [queuedReports.length, addNotification]);
 
   // Process queued reports when coming online
   useEffect(() => {
@@ -60,34 +80,174 @@ export const ReportsProvider = ({ children }) => {
     initializeData();
   }, []);
 
+  // Periodically refresh reports from database when online
+  useEffect(() => {
+    if (!isOnline) return;
+
+    const refreshReports = async () => {
+      try {
+        console.log('Refreshing reports from database...');
+        const databaseReports = await getReports();
+        console.log(`Database returned ${databaseReports.length} reports`);
+        
+        setReports(prev => {
+          // Always merge, even if database is empty (to show latest state)
+          const merged = [...databaseReports];
+          prev.forEach(existingReport => {
+            if (!merged.find(dbReport => dbReport.id === existingReport.id)) {
+              // Only add local reports that aren't in database
+              merged.push(existingReport);
+            }
+          });
+          
+          // Sort by timestamp (newest first)
+          merged.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+          
+          console.log(`Total reports after merge: ${merged.length}`);
+          return merged;
+        });
+        
+      } catch (error) {
+        console.error('Failed to refresh reports:', error);
+      }
+    };
+
+    // Refresh immediately when coming online
+    refreshReports();
+
+    // Set up periodic refresh every 30 seconds
+    const interval = setInterval(refreshReports, 30000);
+
+    return () => clearInterval(interval);
+  }, [isOnline]);
+
   const initializeData = async () => {
     try {
+      setIsLoading(true);
+      
+      // First, try to fetch reports from the database
+      let databaseReports = [];
+      if (isOnline) {
+        try {
+          databaseReports = await getReports();
+          console.log(`Loaded ${databaseReports.length} reports from database`);
+        } catch (error) {
+          console.error('Failed to fetch reports from database:', error);
+        }
+      }
+      
       // Load cached data from previous sessions  
       const cachedReports = await localforage.getItem('oceanwatch_reports') || [];
       const cachedSocial = await localforage.getItem('oceanwatch_social') || [];
       const queued = await localforage.getItem('oceanwatch_queued_reports') || [];
       
-      // Restore reports and queued items for offline functionality
-      setReports(cachedReports);
-      setSocialPosts(cachedSocial);
-      setQueuedReports(queued);
+      // Validate data structure before setting state
+      const validCachedReports = Array.isArray(cachedReports) ? cachedReports : [];
+      const validSocial = Array.isArray(cachedSocial) ? cachedSocial : [];
+      const validQueued = Array.isArray(queued) ? queued : [];
+      
+      // Merge database reports with cached reports (database takes priority)
+      const mergedReports = [...databaseReports];
+      
+      // Add any cached reports that aren't in the database
+      validCachedReports.forEach(cachedReport => {
+        if (!mergedReports.find(dbReport => dbReport.id === cachedReport.id)) {
+          mergedReports.push(cachedReport);
+        }
+      });
+      
+      // Sort by timestamp (newest first)
+      mergedReports.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      
+      // Set state
+      setReports(mergedReports);
+      setSocialPosts(validSocial);
+      setQueuedReports(validQueued);
+      
+      // Cache the merged reports
+      try {
+        await localforage.setItem('oceanwatch_reports', mergedReports);
+      } catch (cacheError) {
+        console.warn('Failed to cache merged reports:', cacheError);
+      }
+      
     } catch (error) {
       console.error('Failed to initialize data:', error);
+      // Clear potentially corrupted storage and start fresh
+      try {
+        await localforage.clear();
+      } catch (clearError) {
+        console.error('Failed to clear corrupted storage:', clearError);
+      }
       // Start with empty arrays on error
       setReports([]);
       setSocialPosts([]);
       setQueuedReports([]);
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  // Progress simulation for better UX
+  const progressTimeouts = useRef(new Map());
+  
+  const startProgressSimulation = useCallback((reportId) => {
+    // Clear any existing timeouts for this report
+    if (progressTimeouts.current.has(reportId)) {
+      progressTimeouts.current.get(reportId).forEach(clearTimeout);
+    }
+    
+    const steps = [
+      { step: 1, progress: 20, delay: 500 },   // Uploaded
+      { step: 2, progress: 40, delay: 1500 },  // Visual Summary
+      { step: 3, progress: 60, delay: 2000 },  // Weather Data
+      { step: 4, progress: 80, delay: 1000 },  // Trust Evaluation
+    ];
+
+    const timeouts = [];
+    
+    steps.forEach(({ step, progress, delay }, index) => {
+      const timeout = setTimeout(() => {
+        setReports(prev => prev.map(report => 
+          report.id === reportId 
+            ? { ...report, processingStep: step, progress }
+            : report
+        ));
+      }, steps.slice(0, index + 1).reduce((acc, curr) => acc + curr.delay, 0));
+      
+      timeouts.push(timeout);
+    });
+    
+    progressTimeouts.current.set(reportId, timeouts);
+  }, []);
+  
+  const stopProgressSimulation = useCallback((reportId) => {
+    if (progressTimeouts.current.has(reportId)) {
+      progressTimeouts.current.get(reportId).forEach(clearTimeout);
+      progressTimeouts.current.delete(reportId);
+    }
+  }, []);
 
   const syncQueuedReports = useCallback(async () => {
     if (queuedReports.length === 0) return;
 
     setIsLoading(true);
     
+    // Notify user about sync starting
+    if (addNotification && queuedReports.length > 0) {
+      addNotification({
+        title: 'Syncing Reports',
+        message: `Submitting ${queuedReports.length} queued report${queuedReports.length > 1 ? 's' : ''}...`,
+        type: 'info'
+      });
+    }
+    
     try {
       for (const report of queuedReports) {
         try {
+          // Start progress simulation for queued reports
+          startProgressSimulation(report.id);
+          
           // Send data to backend API
           const result = await uploadReport(report.image, {
             coords: report.coords,
@@ -95,20 +255,22 @@ export const ReportsProvider = ({ children }) => {
           });
           
           // Update report with actual data from API
+          const hasValidData = result.visual_summary || result.trust_evaluation || result.reports;
           const updatedReport = {
             ...report,
-            status: 'processed',
+            status: hasValidData ? 'processed' : 'error',
             progress: 100,
             processingStep: 5,
-            trustScore: result.trust_evaluation.score,
-            location: result.location,
-            address: result.location,
-            visualSummary: result.visual_summary,
-            weatherSummary: result.weather_summary,
-            authorityReport: result.reports.authority_report,
-            publicAlert: result.reports.public_alert,
-            volunteerGuidance: result.reports.volunteer_guidance,
-            coords: result.coordinates
+            trustScore: result.trust_evaluation?.score || result.trustScore || 0,
+            location: result.location || result.address || 'Unknown location',
+            address: result.location || result.address || 'Unknown location',
+            visualSummary: result.visual_summary || result.visualSummary || 'No visual summary available',
+            weatherSummary: result.weather_summary || result.weatherSummary || 'No weather data available',
+            authorityReport: result.reports?.authority_report || result.authorityReport || 'No authority report available',
+            publicAlert: result.reports?.public_alert || result.publicAlert || 'No public alert available',
+            volunteerGuidance: result.reports?.volunteer_guidance || result.volunteerGuidance || 'No volunteer guidance available',
+            coords: result.coordinates || result.coords || report.coords,
+            pipelineStatus: result.status || (hasValidData ? 'PROCESSED' : 'UNKNOWN')
           };
           
           // Update reports list
@@ -116,12 +278,21 @@ export const ReportsProvider = ({ children }) => {
             r.id === report.id ? updatedReport : r
           ));
           
+          // Save to database for sharing across users
+          try {
+            await saveReport(updatedReport);
+            console.log(`Synced report ${updatedReport.id} saved to database`);
+          } catch (saveError) {
+            console.error('Failed to save synced report to database:', saveError);
+          }
+          
           // Add notification
           if (addNotification) {
+            const trustScore = result.trust_evaluation?.score || 0;
             addNotification({
               title: 'Trust Score Ready',
-              message: `Report processed with trust score: ${result.trust_evaluation.score}%`,
-              type: result.trust_evaluation.score >= 50 ? 'success' : 'error'
+              message: `Report processed with trust score: ${trustScore}%`,
+              type: trustScore >= 50 ? 'success' : 'error'
             });
           }
         } catch (error) {
@@ -131,18 +302,49 @@ export const ReportsProvider = ({ children }) => {
       }
 
       // Clear successfully synced reports from queue
+      const syncedCount = queuedReports.length;
       setQueuedReports([]);
       await localforage.setItem('oceanwatch_queued_reports', []);
       
-      // Update cached reports
-      await localforage.setItem('oceanwatch_reports', reports);
+      // Notify user about successful sync
+      if (addNotification && syncedCount > 0) {
+        addNotification({
+          title: 'Reports Synced',
+          message: `Successfully submitted ${syncedCount} report${syncedCount > 1 ? 's' : ''}!`,
+          type: 'success'
+        });
+      }
+      
+      // Update cached reports with error handling
+      try {
+        await localforage.setItem('oceanwatch_reports', reports);
+      } catch (storageError) {
+        console.warn('Failed to cache reports:', storageError);
+        // Try to store without images if blob storage fails
+        const reportsWithoutImages = reports.map(r => ({
+          ...r,
+          image: r.image ? '[Image data removed for storage]' : r.image
+        }));
+        try {
+          await localforage.setItem('oceanwatch_reports', reportsWithoutImages);
+        } catch (fallbackError) {
+          console.error('Failed to cache reports even without images:', fallbackError);
+        }
+      }
       
     } catch (error) {
       console.error('Sync failed:', error);
+      if (addNotification) {
+        addNotification({
+          title: 'Sync Failed',
+          message: 'Some reports could not be submitted. They will retry later.',
+          type: 'error'
+        });
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [queuedReports, reports, addNotification]);
+  }, [queuedReports, reports, addNotification, startProgressSimulation]);
 
   // Real-time progress updates only for legitimate API processing
   // Progress simulation removed - only real API responses update status
@@ -188,60 +390,211 @@ export const ReportsProvider = ({ children }) => {
       }
       return newReport;
     }
+
+    // Start progress simulation for better UX
+    startProgressSimulation(newReport.id);
     
     try {
+      console.log('Sending report to SIH pipeline...', {
+        coords: reportData.coords,
+        hasImage: !!reportData.image
+      });
+      
       // Send data to backend API
       const result = await uploadReport(reportData.image, {
         coords: reportData.coords,
         timestamp: Date.now()
       });
       
-      // Update report with actual data from API
-      const updatedReport = {
-        ...newReport,
-        status: 'processed',
-        progress: 100,
-        processingStep: 5,
-        trustScore: result.trust_evaluation.score,
-        location: result.location,
-        address: result.location,
-        visualSummary: result.visual_summary,
-        weatherSummary: result.weather_summary,
-        authorityReport: result.reports.authority_report,
-        publicAlert: result.reports.public_alert,
-        volunteerGuidance: result.reports.volunteer_guidance,
-        coords: result.coordinates
-      };
+      console.log('SIH Pipeline Response:', result);
       
-      setReports(prev => prev.map(report => 
-        report.id === newReport.id ? updatedReport : report
-      ));
+      // Stop progress simulation since we have real results
+      stopProgressSimulation(newReport.id);
       
-      // Add notification
-      if (addNotification) {
-        addNotification({
-          title: 'Trust Score Ready',
-          message: `Report processed with trust score: ${result.trust_evaluation.score}%`,
-          type: result.trust_evaluation.score >= 50 ? 'success' : 'error'
+      // Handle different response statuses from SIH pipeline
+      let updatedReport;
+      
+      if (result.status === 'PROCESSED') {
+        // Successful processing
+        updatedReport = {
+          ...newReport,
+          status: 'processed',
+          progress: 100,
+          processingStep: 5,
+          trustScore: result.trust_evaluation?.score || 0,
+          location: result.location || 'Unknown location',
+          address: result.location || 'Unknown location',
+          visualSummary: result.visual_summary || 'No visual summary available',
+          weatherSummary: result.weather_summary || 'No weather data available',
+          authorityReport: result.reports?.authority_report || 'No authority report available',
+          publicAlert: result.reports?.public_alert || 'No public alert available',
+          volunteerGuidance: result.reports?.volunteer_guidance || 'No volunteer guidance available',
+          coords: result.coordinates || newReport.coords,
+          pipelineStatus: 'PROCESSED'
+        };
+      } else if (result.status === 'REJECTED') {
+        // Rejected by pipeline
+        updatedReport = {
+          ...newReport,
+          status: 'rejected',
+          progress: 100,
+          processingStep: 5,
+          trustScore: 0,
+          trust_score: 0, // Also set this for consistency
+          location: reportData.address || 'Unknown location',
+          address: reportData.address || 'Unknown location',
+          visualSummary: result.visual_summary || 'No visual analysis available',
+          weatherSummary: 'Not applicable - report rejected',
+          authorityReport: `Report rejected: ${result.reason}`,
+          publicAlert: 'No alert generated - report did not meet criteria',
+          volunteerGuidance: 'No guidance available for rejected reports',
+          coords: newReport.coords,
+          pipelineStatus: 'REJECTED',
+          rejectionReason: result.reason,
+          weatherEmergencyRelated: result.weather_emergency_related,
+          screenCaptureDetected: result.screen_capture_detected
+        };
+      } else if (result.status === 'ERROR') {
+        // Pipeline error
+        updatedReport = {
+          ...newReport,
+          status: 'error',
+          progress: 100,
+          processingStep: 5,
+          trustScore: 0,
+          trust_score: 0, // Also set this for consistency
+          location: reportData.address || 'Unknown location',
+          address: reportData.address || 'Unknown location',
+          visualSummary: 'Processing failed',
+          weatherSummary: 'Not available due to processing error',
+          authorityReport: `Processing error: ${result.message}`,
+          publicAlert: 'No alert generated due to processing error',
+          volunteerGuidance: 'Please try submitting the report again',
+          coords: newReport.coords,
+          pipelineStatus: 'ERROR',
+          errorMessage: result.message
+        };
+      } else {
+        // Fallback for unknown status or different response format
+        // Handle case where SIH pipeline returns data without explicit status
+        const hasValidData = result.visual_summary || result.trust_evaluation || result.reports;
+        
+        updatedReport = {
+          ...newReport,
+          status: hasValidData ? 'processed' : 'error',
+          progress: 100,
+          processingStep: 5,
+          trustScore: result.trust_evaluation?.score || result.trustScore || 0,
+          location: result.location || result.address || reportData.address || 'Unknown location',
+          address: result.location || result.address || reportData.address || 'Unknown location',
+          visualSummary: result.visual_summary || result.visualSummary || 'No visual summary available',
+          weatherSummary: result.weather_summary || result.weatherSummary || 'No weather data available',
+          authorityReport: result.reports?.authority_report || result.authorityReport || 'No authority report available',
+          publicAlert: result.reports?.public_alert || result.publicAlert || 'No public alert available',
+          volunteerGuidance: result.reports?.volunteer_guidance || result.volunteerGuidance || 'No volunteer guidance available',
+          coords: result.coordinates || result.coords || newReport.coords,
+          pipelineStatus: result.status || (hasValidData ? 'PROCESSED' : 'UNKNOWN')
+        };
+      }
+      
+      // Update report with final results (with a small delay to ensure it overrides progress simulation)
+      setTimeout(() => {
+        console.log('Updating report with final results:', updatedReport.id, updatedReport.status);
+        setReports(prev => {
+          const updated = prev.map(report => 
+            report.id === newReport.id ? updatedReport : report
+          );
+          console.log('Reports after update:', updated.map(r => ({ id: r.id, status: r.status, progress: r.progress })));
+          return updated;
         });
+      }, 100);
+      
+      // Save to database for sharing across users
+      try {
+        await saveReport(updatedReport);
+        console.log(`Report ${updatedReport.id} saved to database`);
+      } catch (saveError) {
+        console.error('Failed to save report to database:', saveError);
+        // Continue anyway - report is still available locally
+      }
+      
+      // Add notification based on pipeline status
+      if (addNotification) {
+        if (result.status === 'PROCESSED') {
+          const trustScore = result.trust_evaluation?.score || 0;
+          addNotification({
+            title: 'Report Processed',
+            message: `Report processed successfully with trust score: ${trustScore}%`,
+            type: trustScore >= 50 ? 'success' : 'warning'
+          });
+        } else if (result.status === 'REJECTED') {
+          addNotification({
+            title: 'Report Rejected',
+            message: result.reason || 'Report did not meet processing criteria',
+            type: 'error'
+          });
+        } else if (result.status === 'ERROR') {
+          addNotification({
+            title: 'Processing Error',
+            message: result.message || 'Failed to process report',
+            type: 'error'
+          });
+        }
       }
       
       return updatedReport;
     } catch (error) {
       console.error('Error processing report:', error);
-      // If there's an error, queue the report for later
-      setQueuedReports(prev => [...prev, newReport]);
-      // Add notification about queuing
+      
+      // Stop progress simulation
+      stopProgressSimulation(newReport.id);
+      
+      // Update report to show error state
+      const errorReport = {
+        ...newReport,
+        status: 'error',
+        progress: 100,
+        processingStep: 5,
+        trustScore: 0,
+        trust_score: 0,
+        location: reportData.address || 'Unknown location',
+        address: reportData.address || 'Unknown location',
+        visualSummary: 'Processing failed - connection error',
+        weatherSummary: 'Not available due to connection error',
+        authorityReport: `Connection error: ${error.message}`,
+        publicAlert: 'No alert generated due to connection error',
+        volunteerGuidance: 'Please check your connection and try again',
+        coords: newReport.coords,
+        pipelineStatus: 'ERROR',
+        errorMessage: error.message
+      };
+      
+      // Update report with error state (with a small delay to ensure it overrides progress simulation)
+      setTimeout(() => {
+        setReports(prev => prev.map(report => 
+          report.id === newReport.id ? errorReport : report
+        ));
+      }, 100);
+      
+      // Save error report to database too
+      try {
+        await saveReport(errorReport);
+        console.log(`Error report ${errorReport.id} saved to database`);
+      } catch (saveError) {
+        console.error('Failed to save error report to database:', saveError);
+      }
+      
+      // Add notification about error
       if (addNotification) {
         addNotification({
-          title: 'Report Queued',
-          message: 'Report will be submitted when connection is restored',
-          type: 'info'
+          title: 'Connection Error',
+          message: 'Failed to process report. Please check your connection.',
+          type: 'error'
         });
       }
-      return newReport;
+      return errorReport;
     }
-  }, [user, isOnline, addNotification]);
+  }, [user, isOnline, addNotification, startProgressSimulation, stopProgressSimulation]);
 
   const calculateInitialTrustScore = (reportData) => {
     let score = 50; // Base score
@@ -289,12 +642,19 @@ export const ReportsProvider = ({ children }) => {
   const likeReport = async (reportId) => {
     const updatedReports = reports.map(report => 
       report.id === reportId 
-        ? { ...report, likes: report.likes + 1 }
+        ? { ...report, likes: (report.likes || 0) + 1 }
         : report
     );
     
     setReports(updatedReports);
-    await localforage.setItem('oceanwatch_reports', updatedReports);
+    
+    // Try to cache the updated reports
+    try {
+      await localforage.setItem('oceanwatch_reports', updatedReports);
+    } catch (error) {
+      console.warn('Failed to cache liked report:', error);
+      // Continue without caching - the like is still applied in memory
+    }
   };
 
   const getFilteredReports = () => {
@@ -363,6 +723,33 @@ export const ReportsProvider = ({ children }) => {
     URL.revokeObjectURL(url);
   };
 
+  const refreshFromDatabase = useCallback(async () => {
+    try {
+      console.log('Manual refresh triggered...');
+      const databaseReports = await getReports();
+      console.log(`Manual refresh: Database returned ${databaseReports.length} reports`);
+      
+      setReports(databaseReports);
+      
+      if (addNotification) {
+        addNotification({
+          title: 'Reports Refreshed',
+          message: `Loaded ${databaseReports.length} reports from database`,
+          type: 'success'
+        });
+      }
+    } catch (error) {
+      console.error('Manual refresh failed:', error);
+      if (addNotification) {
+        addNotification({
+          title: 'Refresh Failed',
+          message: 'Could not refresh reports from database',
+          type: 'error'
+        });
+      }
+    }
+  }, [addNotification]);
+
   const value = {
     reports: getFilteredReports(),
     socialPosts,
@@ -375,6 +762,7 @@ export const ReportsProvider = ({ children }) => {
     syncQueuedReports,
     likeReport,
     exportReports,
+    refreshFromDatabase,
     allReports: reports // Unfiltered reports
   };
 

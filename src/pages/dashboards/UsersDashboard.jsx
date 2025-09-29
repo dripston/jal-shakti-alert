@@ -4,7 +4,7 @@ import { Button } from '../../components/ui/button';
 import { useReports } from '../../contexts/ReportsContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Camera, Heart, MessageCircle, Share2, TrendingUp } from 'lucide-react';
-import PostCard from '../../components/PostCard';
+import SocialPost from '../../components/SocialPost';
 
 const UsersDashboard = () => {
   const { allReports } = useReports();
@@ -47,9 +47,26 @@ const UsersDashboard = () => {
       </div>
 
       <div className="space-y-4">
-        {userReports.map(report => (
-          <PostCard key={report.id} report={report} />
-        ))}
+        <h2 className="text-lg font-heading font-semibold">Your Reports</h2>
+        {userReports.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-8">
+              <Camera className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <h3 className="font-medium mb-2">No reports yet</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Start contributing to ocean safety by reporting hazards you observe.
+              </p>
+              <Button>
+                <Camera className="h-4 w-4 mr-2" />
+                Create Your First Report
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          userReports.map(report => (
+            <SocialPost key={report.id} report={report} />
+          ))
+        )}
       </div>
     </div>
   );

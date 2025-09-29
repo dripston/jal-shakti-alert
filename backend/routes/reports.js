@@ -105,16 +105,55 @@ router.post('/process', upload.single('image'), async (req, res) => {
   }
 });
 
+// In-memory storage for reports (in production, use a real database)
+let reportsDatabase = [];
+
 // Get all reports
 router.get('/', async (req, res) => {
   try {
-    // In a real implementation, this would fetch from database
-    // For now, return empty array since we start fresh
-    res.json([]);
+    // Return all stored reports
+    res.json(reportsDatabase);
   } catch (error) {
     console.error('Error fetching reports:', error);
     res.status(500).json({ 
       error: 'Failed to fetch reports',
+      message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+});
+
+// Save processed report to database
+router.post('/save', async (req, res) => {
+  try {
+    const report = req.body;
+    
+    // Add timestamp and ID if not present
+    if (!report.id) {
+      report.id = `r_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    }
+    if (!report.timestamp) {
+      report.timestamp = new Date().toISOString();
+    }
+    
+    // Store in database
+    reportsDatabase.unshift(report); // Add to beginning of array
+    
+    // Keep only last 100 reports to prevent memory issues
+    if (reportsDatabase.length > 100) {
+      reportsDatabase = reportsDatabase.slice(0, 100);
+    }
+    
+    console.log(`Saved report ${report.id} to database. Total reports: ${reportsDatabase.length}`);
+    
+    res.json({ 
+      success: true, 
+      reportId: report.id,
+      totalReports: reportsDatabase.length 
+    });
+  } catch (error) {
+    console.error('Error saving report:', error);
+    res.status(500).json({ 
+      error: 'Failed to save report',
       message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }

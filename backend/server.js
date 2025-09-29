@@ -28,7 +28,13 @@ app.use(limiter);
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? false  // Same-origin requests only in production
-    : ['http://localhost:3000', 'http://localhost:5000', 'http://0.0.0.0:5000', 'http://127.0.0.1:5000'],
+    : [
+        'http://localhost:3000', 
+        'http://localhost:5000', 
+        'http://0.0.0.0:5000', 
+        'http://127.0.0.1:5000',
+        'http://192.168.1.6:5000'  // Add your network IP
+      ],
   credentials: true
 }));
 

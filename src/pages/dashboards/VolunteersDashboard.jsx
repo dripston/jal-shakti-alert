@@ -3,12 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { useReports } from '../../contexts/ReportsContext';
-import { Users, MapPin, Clock, CheckCircle } from 'lucide-react';
+import { Users, MapPin, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
 
 const VolunteersDashboard = () => {
   const { allReports } = useReports();
   
-  const tasks = allReports.filter(r => r.alert_level === 'high').slice(0, 10);
+  // Show all processed reports as potential tasks for volunteers
+  const tasks = allReports.filter(r => 
+    r.status === 'processed' && (r.trustScore || r.trust_score || 0) >= 50
+  ).slice(0, 10);
   const completedTasks = Math.floor(tasks.length * 0.6);
 
   return (
@@ -38,22 +41,163 @@ const VolunteersDashboard = () => {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Available Tasks</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {tasks.map(task => (
-            <div key={task.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-              <div className="space-y-1">
-                <p className="font-medium capitalize">{task.visual_tag.replace('_', ' ')}</p>
-                <p className="text-sm text-muted-foreground">{task.address}</p>
-              </div>
-              <Button size="sm">Accept Task</Button>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <h2 className="text-lg font-heading font-semibold">Available Tasks</h2>
+        
+        {tasks.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-8">
+              <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-600" />
+              <h3 className="font-medium mb-2">No active tasks!</h3>
+              <p className="text-sm text-muted-foreground">
+                All current reports have been handled.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          tasks.map(task => (
+            <Card key={task.id} className="border-orange-200 bg-orange-50/50">
+              <CardContent className="p-4">
+                {/* Volunteer-specific report view */}
+                <div className="space-y-3">
+                  {/* Basic Task Info */}
+                  <div className="flex items-start space-x-3">
+                    {task.image && (
+                      <img 
+                        src={task.image} 
+                        alt="Task" 
+                        className="w-16 h-16 object-cover rounded-lg"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <Badge variant="destructive">
+                          URGENT - {task.alert_level?.toUpperCase() || 'HIGH'} PRIORITY
+                        </Badge>
+                        <Badge variant="outline">
+                          Trust Score: {task.trustScore || task.trust_score || 0}%
+                        </Badge>
+                      </div>
+                      <div className="flex items-center text-sm text-muted-foreground mb-2">
+                        <MapPin className="h-4 w-4 mr-1" />
+                        <span>{task.location || task.address}</span>
+                        <span className="mx-2">•</span>
+                        <Clock className="h-4 w-4 mr-1" />
+                        <span>{new Date(task.timestamp).toLocaleString()}</span>
+                      </div>
+                      {task.description && (
+                        <p className="text-sm text-gray-700 mb-2">{task.description}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Volunteer Guidance */}
+                  {task.volunteerGuidance && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                      <h4 className="text-sm font-medium text-orange-900 mb-2">🦺 Volunteer Instructions</h4>
+                      <div className="text-sm text-orange-800 space-y-1">
+                        {task.volunteerGuidance.split('\n').filter(line => line.trim()).map((line, index) => {
+                          const cleanLine = line.replace(/^\s*[\*\-]\s*/, '').replace(/\*\*(.*?)\*\*/g, '$1').trim();
+                          if (cleanLine.includes(':') && !cleanLine.startsWith('•')) {
+                            return <p key={index} className="font-medium text-orange-900">{cleanLine}</p>;
+                          }
+                          if (line.trim().startsWith('*') || line.trim().startsWith('-') || cleanLine.includes('•')) {
+                            return <p key={index} className="ml-3 flex items-start"><span className="mr-2">•</span><span>{cleanLine.replace('•', '').trim()}</span></p>;
+                          }
+                          if (cleanLine.length > 0) {
+                            return <p key={index}>{cleanLine}</p>;
+                          }
+                          return null;
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Public Alert Context */}
+                  {task.publicAlert && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                      <h4 className="text-sm font-medium text-red-900 mb-2">📢 Public Alert</h4>
+                      <div className="text-sm text-red-800 space-y-1">
+                        {task.publicAlert.split('\n').filter(line => line.trim()).map((line, index) => {
+                          const cleanLine = line.replace(/^\s*[\*\-]\s*/, '').replace(/\*\*(.*?)\*\*/g, '$1').trim();
+                          if (line.trim().startsWith('*') || line.trim().startsWith('-') || cleanLine.includes('•')) {
+                            return <p key={index} className="ml-3 flex items-start"><span className="mr-2">•</span><span>{cleanLine.replace('•', '').trim()}</span></p>;
+                          }
+                          if (cleanLine.length > 0) {
+                            return <p key={index}>{cleanLine}</p>;
+                          }
+                          return null;
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Safety Information */}
+                  {task.weatherSummary && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <h4 className="text-sm font-medium text-blue-900 mb-2">🌤️ Weather & Safety</h4>
+                      <div className="text-sm text-blue-800 space-y-1">
+                        {task.weatherSummary.split('.').filter(sentence => sentence.trim()).slice(0, 3).map((sentence, index) => {
+                          const cleanSentence = sentence.trim();
+                          if (cleanSentence.length > 0) {
+                            return <p key={index} className="flex items-start"><span className="mr-2">•</span><span>{cleanSentence}.</span></p>;
+                          }
+                          return null;
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Volunteer Actions */}
+                <div className="mt-4 pt-4 border-t bg-muted/20 -mx-4 px-4 -mb-4 pb-4">
+                  <div className="flex flex-wrap gap-2">
+                    <Button 
+                      size="sm" 
+                      className="bg-orange-600 hover:bg-orange-700"
+                    >
+                      <Users className="h-4 w-4 mr-1" />
+                      Accept Task
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                    >
+                      <MapPin className="h-4 w-4 mr-1" />
+                      Get Directions
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                    >
+                      📞 Contact Team
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                    >
+                      ℹ️ More Details
+                    </Button>
+                  </div>
+                  
+                  {/* Task Status */}
+                  <div className="mt-3 p-3 bg-orange-100 rounded-lg">
+                    <div className="text-xs text-orange-600 font-medium mb-1">
+                      Task Status: Available
+                    </div>
+                    <div className="space-y-1 text-xs text-orange-700">
+                      <div>Estimated Duration: 2-4 hours</div>
+                      <div>Required Skills: Basic rescue, First aid</div>
+                      <div>Team Size: 3-5 volunteers recommended</div>
+                      <div>Equipment: Provided on-site</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 };

@@ -1,89 +1,141 @@
-# Welcome to your Lovable project
+# Pragyan Chakra - Smart Water Management System
 
-## Project info
+A comprehensive water management and hazard reporting platform built for Smart India Hackathon.
 
-**URL**: https://lovable.dev/projects/dae516d5-6a56-4ed2-93bb-cd4dcf5a2bde
+## 🌟 Features
 
-## Ocean Hazard Reporting Implementation
+- **Real-time Water Hazard Reporting**: Community-driven reporting system
+- **AI-Powered Analysis**: Integration with SIH pipeline for intelligent processing
+- **Multi-Role Dashboards**: Separate interfaces for authorities, volunteers, and users
+- **Offline Support**: Works offline with automatic sync when online
+- **Responsive Design**: Optimized for both mobile and desktop
+- **Social Features**: Community engagement with likes, comments, and sharing
 
-This project has been enhanced with a new ocean hazard reporting system. See [README_IMPLEMENTATION.md](README_IMPLEMENTATION.md) for details on the new features and implementation.
+## 🚀 Tech Stack
 
-## Environment Variables
+- **Frontend**: React 18, Vite, Tailwind CSS
+- **Backend**: Node.js, Express
+- **UI Components**: Radix UI, Shadcn/ui
+- **State Management**: React Context API
+- **Storage**: LocalForage for offline support
+- **Maps**: Leaflet for interactive mapping
+- **Deployment**: Vercel (Full-stack)
 
-Before running the application, you need to set up environment variables:
+## 📱 User Roles
 
-1. Copy the example files:
-   ```bash
-   cp backend/.env.example backend/.env
-   cp .env.example .env
-   ```
+### 1. Community Users
+- Report water hazards with photos and GPS
+- View community feed with social features
+- Track personal reporting statistics
 
-2. Update the values in both `.env` files according to your setup.
+### 2. Authorities
+- Review and verify reports
+- Access detailed analysis and weather data
+- Coordinate emergency response
+- Assign tasks to volunteers
 
-## How can I edit this code?
+### 3. Volunteers
+- Accept and manage assigned tasks
+- Access safety guidelines and instructions
+- Coordinate field operations
 
-There are several ways of editing your application.
+## 🛠️ Installation
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/dae516d5-6a56-4ed2-93bb-cd4dcf5a2bde) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd pragyan-chakra
 ```
 
-**Edit a file directly in GitHub**
+2. Install dependencies:
+```bash
+npm install
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+3. Set up environment variables:
+```bash
+cp .env.example .env
+# Update the environment variables as needed
+```
 
-**Use GitHub Codespaces**
+4. Start development servers:
+```bash
+# Start both frontend and backend
+npm run dev:full
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+# Or start individually
+npm run dev          # Frontend only
+npm run dev:backend  # Backend only
+```
 
-## What technologies are used for this project?
+## 🌐 Deployment
 
-This project is built with:
+### Vercel Deployment
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+1. Push your code to GitHub
+2. Connect your repository to Vercel
+3. Configure environment variables in Vercel dashboard
+4. Deploy with automatic builds
 
-## How can I deploy this project?
+### Environment Variables
 
-Simply open [Lovable](https://lovable.dev/projects/dae516d5-6a56-4ed2-93bb-cd4dcf5a2bde) and click on Share -> Publish.
+```env
+NODE_ENV=production
+VITE_API_URL=/api
+```
 
-## Can I connect a custom domain to my Lovable project?
+## 📊 SIH Pipeline Integration
 
-Yes, you can!
+The system integrates with the Smart India Hackathon pipeline for:
+- Image analysis and hazard detection
+- Weather data correlation
+- Trust score calculation
+- Automated report generation
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 🔧 API Endpoints
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- `POST /api/reports/process` - Submit report for processing
+- `GET /api/reports` - Fetch all reports
+- `POST /api/reports/save` - Save processed report
+- `GET /api/reports/health` - Health check
+
+## 🎨 Design System
+
+The application uses a custom design system inspired by Indian traditional elements:
+- Saffron and blue color palette
+- Responsive typography
+- Accessible UI components
+- Mobile-first approach
+
+## 📱 Progressive Web App
+
+- Offline functionality
+- Push notifications
+- App-like experience on mobile
+- Automatic updates
+
+## 🔒 Security Features
+
+- Input validation and sanitization
+- CORS protection
+- Rate limiting
+- Secure file uploads
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## 📄 License
+
+This project is developed for Smart India Hackathon 2024.
+
+## 👥 Team
+
+Pragyan Chakra Development Team - SIH 2024
+
+---
+
+Built with ❤️ for Smart Water Management
