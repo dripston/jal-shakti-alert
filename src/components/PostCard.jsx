@@ -135,7 +135,7 @@ const PostCard = ({ report, onViewOnMap, compact = false }) => {
 
         {/* GPS Coordinates */}
         <div className="mb-3 text-xs text-muted-foreground font-mono">
-          {report.coords.lat.toFixed(4)}, {report.coords.lng.toFixed(4)}
+          {report.coords?.lat?.toFixed(4) || 'N/A'}, {report.coords?.lng?.toFixed(4) || 'N/A'}
         </div>
 
         {/* Verification Badges */}

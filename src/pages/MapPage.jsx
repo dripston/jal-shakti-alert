@@ -219,9 +219,12 @@ const MapPage = () => {
   };
 
   return (
-    <div className="relative h-full">
+    <div className="relative w-full h-screen bg-gray-100">
+      <div className="absolute top-4 left-4 z-50 bg-white p-2 rounded shadow">
+        <p>Map Debug: {reports.length} reports loaded</p>
+      </div>
       {/* Map Container */}
-      <div ref={mapRef} className="w-full h-full" />
+      <div ref={mapRef} className="w-full h-full" style={{ minHeight: '500px' }} />
 
       {/* Map Controls Overlay */}
       <div className="absolute top-4 left-4 z-[1000] space-y-2">

@@ -51,7 +51,7 @@ const SummaryDashboard = () => {
     
     if (lastWeek === 0) return { change: 0, direction: 'neutral' };
     
-    const change = ((thisWeek - lastWeek) / lastWeek * 100).toFixed(1);
+    const change = lastWeek > 0 ? ((thisWeek - lastWeek) / lastWeek * 100).toFixed(1) : 0;
     return {
       change: Math.abs(change),
       direction: thisWeek > lastWeek ? 'up' : thisWeek < lastWeek ? 'down' : 'neutral'

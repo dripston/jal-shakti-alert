@@ -129,7 +129,7 @@ const ReportForm = ({ onReportSubmit }) => {
           </button>
           {coords && (
             <p className="mt-2 text-sm text-green-600">
-              Location: {coords.latitude.toFixed(6)}, {coords.longitude.toFixed(6)}
+              Location: {coords.latitude?.toFixed(6) || 'N/A'}, {coords.longitude?.toFixed(6) || 'N/A'}
             </p>
           )}
         </div>

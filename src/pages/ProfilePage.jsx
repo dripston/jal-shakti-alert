@@ -72,7 +72,16 @@ const ProfilePage = () => {
     setIsEditing(false);
   };
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="py-6 lg:py-0 space-y-6 px-4 lg:px-0">
+        <div className="text-center">
+          <h1>No user found</h1>
+          <p>Please log in to view your profile.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-6 lg:py-0 space-y-6 px-4 lg:px-0">

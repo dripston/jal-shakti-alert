@@ -113,13 +113,13 @@ const ReportFormModal = ({ isOpen, onClose }) => {
       ctx.drawImage(video, 0, 0);
 
       // Add GPS overlay to the image
-      if (formData.coords) {
+      if (formData.coords && formData.coords.lat && formData.coords.lng) {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
         ctx.fillRect(10, canvas.height - 80, canvas.width - 20, 70);
 
         ctx.fillStyle = 'white';
         ctx.font = '16px Arial';
-        ctx.fillText(`📍 GPS: ${formData.coords.lat.toFixed(6)}, ${formData.coords.lng.toFixed(6)}`, 20, canvas.height - 50);
+        ctx.fillText(`📍 GPS: ${formData.coords.lat?.toFixed(6) || 'N/A'}, ${formData.coords.lng?.toFixed(6) || 'N/A'}`, 20, canvas.height - 50);
         ctx.fillText(`🕒 ${new Date().toLocaleString()}`, 20, canvas.height - 25);
       }
 
@@ -466,7 +466,7 @@ const ReportFormModal = ({ isOpen, onClose }) => {
                       <div>
                         <div className="flex items-center space-x-1">
                           <MapPin className="h-3 w-3 text-red-400" />
-                          <span>{formData.coords.lat.toFixed(6)}, {formData.coords.lng.toFixed(6)}</span>
+                          <span>{formData.coords.lat?.toFixed(6) || 'N/A'}, {formData.coords.lng?.toFixed(6) || 'N/A'}</span>
                         </div>
                         <div className="text-xs opacity-90">
                           {formData.address}
@@ -517,7 +517,7 @@ const ReportFormModal = ({ isOpen, onClose }) => {
                     <div className="absolute bottom-2 left-2 right-2 bg-black/70 text-white p-2 rounded text-xs">
                       <div className="flex items-center space-x-1">
                         <MapPin className="h-3 w-3 text-red-400" />
-                        <span>{formData.coords.lat.toFixed(6)}, {formData.coords.lng.toFixed(6)}</span>
+                        <span>{formData.coords.lat?.toFixed(6) || 'N/A'}, {formData.coords.lng?.toFixed(6) || 'N/A'}</span>
                       </div>
                       <div className="text-xs opacity-90">
                         {formData.address}
@@ -644,10 +644,10 @@ const ReportFormModal = ({ isOpen, onClose }) => {
                   </div>
                   <div className="mt-2 space-y-1">
                     <p className="text-xs font-mono text-green-700">
-                      📍 {formData.coords.lat.toFixed(6)}, {formData.coords.lng.toFixed(6)}
+                      📍 {formData.coords.lat?.toFixed(6) || 'N/A'}, {formData.coords.lng?.toFixed(6) || 'N/A'}
                     </p>
                     <p className="text-xs text-green-600">
-                      🎯 Accuracy: ±{formData.coords.accuracy?.toFixed(0)}m
+                      🎯 Accuracy: ±{formData.coords.accuracy?.toFixed(0) || 'N/A'}m
                     </p>
                     <p className="text-xs text-green-600">{formData.address}</p>
                   </div>
@@ -685,7 +685,7 @@ const ReportFormModal = ({ isOpen, onClose }) => {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">GPS:</span>
                       <span className="font-mono text-xs">
-                        {formData.coords.lat.toFixed(6)}, {formData.coords.lng.toFixed(6)}
+                        {formData.coords.lat?.toFixed(6) || 'N/A'}, {formData.coords.lng?.toFixed(6) || 'N/A'}
                       </span>
                     </div>
                   )}
