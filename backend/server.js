@@ -59,15 +59,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Serve built frontend in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../dist')));
-  
-  // Handle React routing, return all requests to React app
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../dist', 'index.html'));
-  });
-}
+// Note: Static file serving is handled by Vercel, not needed in serverless functions
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -78,23 +70,12 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+// 404 handler for API routes only
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ error: 'API route not found' });
 });
 
-app.listen(PORT, async () => {
-  console.log(`🌊 OceanWatch API server running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🗄️  Database: ${process.env.DB_PATH || './database/oceanwatch.db'}`);
-  
-  // Initialize database on startup
-  try {
-    await initializeDatabase();
-    console.log('✅ Database ready');
-  } catch (error) {
-    console.error('❌ Database initialization failed:', error);
-  }
-});
+// For Vercel serverless functions, we don't use app.listen()
+// Database initialization is handled per-request via ensureInitialized()
 
 module.exports = app;

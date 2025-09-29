@@ -165,7 +165,7 @@ router.post('/login', async (req, res) => {
 });
 
 // POST /api/auth/verify - Verify JWT token
-router.post('/verify', (req, res) => {
+router.post('/verify', async (req, res) => {
   const { token } = req.body;
 
   if (!token) {
@@ -173,6 +173,8 @@ router.post('/verify', (req, res) => {
   }
 
   try {
+    // Ensure database is initialized
+    await ensureInitialized();
     const decoded = jwt.verify(token, JWT_SECRET);
     
     // Fetch fresh user data
