@@ -25,8 +25,10 @@ const AuthoritiesDashboard = () => {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [expandedReports, setExpandedReports] = useState({});
 
-  // Filter reports based on selections
+  // Filter reports based on selections - exclude rejected reports
   const filteredReports = allReports.filter(report => {
+    // Never show rejected reports in authorities dashboard
+    if (report.status === 'rejected') return false;
     if (selectedPriority !== 'all' && report.alert_level !== selectedPriority) return false;
     if (selectedStatus !== 'all' && report.status !== selectedStatus) return false;
     return true;
@@ -189,9 +191,8 @@ const AuthoritiesDashboard = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="queued">Pending Review</SelectItem>
-                    <SelectItem value="verified">Verified</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
+                    <SelectItem value="pending">Pending Review</SelectItem>
+                    <SelectItem value="approved">Approved</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -302,17 +303,8 @@ const AuthoritiesDashboard = () => {
                             {getAuthorityName(report.location || report.address)}
                           </span>
                         </div>
-                        <div className="text-sm text-blue-800 space-y-2">
-                          {(showFullReport ? reportLines : shortReport.split('\n')).map((line, index) => {
-                            const cleanLine = line.replace(/^\s*[\*\-]\s*/, '').trim();
-                            if (cleanLine.includes(':') && !cleanLine.startsWith('•')) {
-                              return <p key={index} className="font-medium">{cleanLine}</p>;
-                            }
-                            if (line.trim().startsWith('*') || line.trim().startsWith('-')) {
-                              return <p key={index} className="ml-3">• {cleanLine}</p>;
-                            }
-                            return <p key={index}>{cleanLine}</p>;
-                          })}
+                        <div className="text-sm text-blue-800 space-y-1 whitespace-pre-line">
+                          {showFullReport ? report.authorityReport : shortReport}
                           {isLongReport && (
                             <button 
                               onClick={() => setExpandedReports(prev => ({
@@ -333,17 +325,8 @@ const AuthoritiesDashboard = () => {
                   {report.visualSummary && (
                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                       <h4 className="text-sm font-medium text-gray-900 mb-2">🔍 Visual Analysis</h4>
-                      <div className="text-sm text-gray-700 space-y-1">
-                        {report.visualSummary.split('\n').filter(line => line.trim()).map((line, index) => {
-                          const cleanLine = line.replace(/^\s*[\*\-]\s*/, '').replace(/\*\*(.*?)\*\*/g, '$1').trim();
-                          if (line.trim().startsWith('*') || line.trim().startsWith('-') || cleanLine.includes('•')) {
-                            return <p key={index} className="ml-3 flex items-start"><span className="mr-2">•</span><span>{cleanLine.replace('•', '').trim()}</span></p>;
-                          }
-                          if (cleanLine.length > 0) {
-                            return <p key={index} className="font-medium text-gray-800">{cleanLine}</p>;
-                          }
-                          return null;
-                        })}
+                      <div className="text-sm text-gray-700 whitespace-pre-line">
+                        {report.visualSummary}
                       </div>
                     </div>
                   )}
@@ -352,14 +335,8 @@ const AuthoritiesDashboard = () => {
                   {report.weatherSummary && (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                       <h4 className="text-sm font-medium text-green-900 mb-2">🌤️ Weather Context</h4>
-                      <div className="text-sm text-green-800 space-y-1">
-                        {report.weatherSummary.split('.').filter(sentence => sentence.trim()).map((sentence, index) => {
-                          const cleanSentence = sentence.trim();
-                          if (cleanSentence.length > 0) {
-                            return <p key={index} className="flex items-start"><span className="mr-2">•</span><span>{cleanSentence}.</span></p>;
-                          }
-                          return null;
-                        })}
+                      <div className="text-sm text-green-800 whitespace-pre-line">
+                        {report.weatherSummary}
                       </div>
                     </div>
                   )}

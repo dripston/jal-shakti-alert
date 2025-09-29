@@ -8,9 +8,11 @@ import { Users, MapPin, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
 const VolunteersDashboard = () => {
   const { allReports } = useReports();
   
-  // Show all processed reports as potential tasks for volunteers
+  // Show pending and approved reports as potential tasks for volunteers (exclude rejected)
   const tasks = allReports.filter(r => 
-    r.status === 'processed' && (r.trustScore || r.trust_score || 0) >= 50
+    (r.status === 'pending' || r.status === 'approved' || r.status === 'processed') && 
+    r.status !== 'rejected' && 
+    (r.trustScore || r.trust_score || 0) >= 50
   ).slice(0, 10);
   const completedTasks = Math.floor(tasks.length * 0.6);
 
@@ -95,20 +97,8 @@ const VolunteersDashboard = () => {
                   {task.volunteerGuidance && (
                     <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
                       <h4 className="text-sm font-medium text-orange-900 mb-2">🦺 Volunteer Instructions</h4>
-                      <div className="text-sm text-orange-800 space-y-1">
-                        {task.volunteerGuidance.split('\n').filter(line => line.trim()).map((line, index) => {
-                          const cleanLine = line.replace(/^\s*[\*\-]\s*/, '').replace(/\*\*(.*?)\*\*/g, '$1').trim();
-                          if (cleanLine.includes(':') && !cleanLine.startsWith('•')) {
-                            return <p key={index} className="font-medium text-orange-900">{cleanLine}</p>;
-                          }
-                          if (line.trim().startsWith('*') || line.trim().startsWith('-') || cleanLine.includes('•')) {
-                            return <p key={index} className="ml-3 flex items-start"><span className="mr-2">•</span><span>{cleanLine.replace('•', '').trim()}</span></p>;
-                          }
-                          if (cleanLine.length > 0) {
-                            return <p key={index}>{cleanLine}</p>;
-                          }
-                          return null;
-                        })}
+                      <div className="text-sm text-orange-800 whitespace-pre-line">
+                        {task.volunteerGuidance}
                       </div>
                     </div>
                   )}
@@ -117,17 +107,8 @@ const VolunteersDashboard = () => {
                   {task.publicAlert && (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                       <h4 className="text-sm font-medium text-red-900 mb-2">📢 Public Alert</h4>
-                      <div className="text-sm text-red-800 space-y-1">
-                        {task.publicAlert.split('\n').filter(line => line.trim()).map((line, index) => {
-                          const cleanLine = line.replace(/^\s*[\*\-]\s*/, '').replace(/\*\*(.*?)\*\*/g, '$1').trim();
-                          if (line.trim().startsWith('*') || line.trim().startsWith('-') || cleanLine.includes('•')) {
-                            return <p key={index} className="ml-3 flex items-start"><span className="mr-2">•</span><span>{cleanLine.replace('•', '').trim()}</span></p>;
-                          }
-                          if (cleanLine.length > 0) {
-                            return <p key={index}>{cleanLine}</p>;
-                          }
-                          return null;
-                        })}
+                      <div className="text-sm text-red-800 whitespace-pre-line">
+                        {task.publicAlert}
                       </div>
                     </div>
                   )}
@@ -136,14 +117,8 @@ const VolunteersDashboard = () => {
                   {task.weatherSummary && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                       <h4 className="text-sm font-medium text-blue-900 mb-2">🌤️ Weather & Safety</h4>
-                      <div className="text-sm text-blue-800 space-y-1">
-                        {task.weatherSummary.split('.').filter(sentence => sentence.trim()).slice(0, 3).map((sentence, index) => {
-                          const cleanSentence = sentence.trim();
-                          if (cleanSentence.length > 0) {
-                            return <p key={index} className="flex items-start"><span className="mr-2">•</span><span>{cleanSentence}.</span></p>;
-                          }
-                          return null;
-                        })}
+                      <div className="text-sm text-blue-800 whitespace-pre-line">
+                        {task.weatherSummary}
                       </div>
                     </div>
                   )}
